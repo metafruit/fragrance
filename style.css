@@ -2,29 +2,29 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
 :root {
-  /* HSL Color Palette */
-  --bg-primary: HSL(224, 25%, 8%);
-  --bg-secondary: HSL(223, 20%, 12%);
-  --bg-tertiary: HSL(223, 20%, 16%);
+  /* Floral & Cotton Candy HSL Color Palette */
+  --bg-primary: HSL(325, 75%, 97%);     /* Delicate cotton candy blossom pink */
+  --bg-secondary: HSL(0, 0%, 100%);     /* Pure pristine white for cards and modules */
+  --bg-tertiary: HSL(200, 85%, 96%);    /* Dreamy baby blue */
   
-  --text-primary: HSL(210, 20%, 98%);
-  --text-secondary: HSL(210, 10%, 70%);
-  --text-muted: HSL(210, 5%, 45%);
+  --text-primary: HSL(325, 45%, 22%);    /* Elegant deep plum/rose for readable primary text */
+  --text-secondary: HSL(325, 20%, 42%);  /* Soft berry rose for secondary text */
+  --text-muted: HSL(325, 12%, 60%);      /* Muted pastel rose */
   
-  --accent-gold: HSL(42, 63%, 58%);
-  --accent-gold-hover: HSL(42, 63%, 68%);
-  --accent-amber: HSL(24, 85%, 50%);
+  --accent-gold: HSL(327, 85%, 64%);     /* Vibrant cotton candy pink */
+  --accent-gold-hover: HSL(327, 85%, 55%);
+  --accent-amber: HSL(197, 90%, 62%);    /* Cotton candy sky blue */
   
-  --border-color: HSL(223, 20%, 20%);
-  --border-glow: rgba(212, 175, 55, 0.15);
-  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --border-color: HSL(325, 45%, 91%);    /* Soft pastel rose border */
+  --border-glow: rgba(255, 105, 180, 0.2);
+  --shadow-sm: 0 4px 10px rgba(220, 160, 180, 0.1), 0 2px 4px rgba(220, 160, 180, 0.05);
+  --shadow-md: 0 10px 25px rgba(220, 160, 180, 0.15), 0 4px 10px rgba(220, 160, 180, 0.08);
+  --shadow-lg: 0 20px 40px rgba(220, 160, 180, 0.2), 0 10px 20px rgba(220, 160, 180, 0.1);
   
   /* Gender Colors */
-  --color-men: HSL(200, 60%, 55%);
-  --color-women: HSL(330, 65%, 65%);
-  --color-unisex: HSL(270, 50%, 60%);
+  --color-men: HSL(200, 75%, 60%);       /* Pastel blue */
+  --color-women: HSL(327, 85%, 66%);     /* Cotton candy pink */
+  --color-unisex: HSL(275, 65%, 68%);    /* Lilac / lavender */
 }
 
 * {
@@ -89,7 +89,7 @@ body {
   font-weight: 700;
   letter-spacing: 1px;
   color: var(--accent-gold);
-  background: linear-gradient(135deg, var(--accent-gold) 0%, #fff7d6 100%);
+  background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-amber) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -1216,7 +1216,7 @@ body {
 
 /* Discover Search / Database matching */
 .discover-hero {
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(8, 10, 15, 0.4) 100%);
+  background: linear-gradient(135deg, rgba(255, 105, 180, 0.06) 0%, rgba(135, 206, 250, 0.15) 100%);
   border: 1px solid var(--border-color);
   border-radius: 24px;
   padding: 3rem 2rem;
@@ -1369,14 +1369,14 @@ body {
 .card-image-wrapper {
   width: 100%;
   height: 140px;
-  background: radial-gradient(circle, var(--bg-tertiary) 0%, rgba(8, 10, 15, 0.4) 100%);
+  background: radial-gradient(circle, var(--bg-secondary) 0%, rgba(220, 160, 180, 0.15) 100%);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 1rem;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
 }
 
 .card-image {
@@ -1384,7 +1384,7 @@ body {
   max-height: 90%;
   object-fit: contain;
   padding: 0.5rem;
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+  filter: drop-shadow(0 4px 8px rgba(220, 160, 180, 0.25));
   transition: transform 0.3s ease;
 }
 
@@ -1416,7 +1416,7 @@ body {
   max-height: 90%;
   object-fit: contain;
   padding: 0.25rem;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+  filter: drop-shadow(0 2px 4px rgba(220, 160, 180, 0.2));
 }
 
 .drawer-fallback-icon {

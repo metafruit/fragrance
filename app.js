@@ -746,13 +746,13 @@ function updateStats() {
       datasets: [{
         label: 'Average Season Affinity',
         data: seasonData,
-        backgroundColor: 'rgba(212, 175, 55, 0.2)',
-        borderColor: 'rgba(212, 175, 55, 1)',
+        backgroundColor: 'rgba(255, 105, 180, 0.15)',
+        borderColor: 'HSL(327, 85%, 64%)',
         borderWidth: 2,
-        pointBackgroundColor: 'rgba(212, 175, 55, 1)',
+        pointBackgroundColor: 'HSL(327, 85%, 64%)',
         pointBorderColor: '#fff',
         pointHoverBackgroundColor: '#fff',
-        pointHoverBorderColor: 'rgba(212, 175, 55, 1)'
+        pointHoverBorderColor: 'HSL(327, 85%, 64%)'
       }]
     },
     options: {
@@ -763,9 +763,9 @@ function updateStats() {
       },
       scales: {
         r: {
-          angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
-          grid: { color: 'rgba(255, 255, 255, 0.1)' },
-          pointLabels: { color: '#e0e0e0', font: { family: 'Outfit', size: 12, weight: '500' } },
+          angleLines: { color: 'rgba(220, 160, 180, 0.15)' },
+          grid: { color: 'rgba(220, 160, 180, 0.15)' },
+          pointLabels: { color: 'HSL(325, 45%, 22%)', font: { family: 'Outfit', size: 12, weight: '500' } },
           ticks: { display: false },
           suggestedMin: 0
         }
@@ -818,13 +818,13 @@ function updateStats() {
       },
       scales: {
         x: {
-          grid: { color: 'rgba(255, 255, 255, 0.05)' },
-          ticks: { color: '#8e8e93', font: { family: 'Outfit' } },
+          grid: { color: 'rgba(220, 160, 180, 0.12)' },
+          ticks: { color: 'HSL(325, 20%, 42%)', font: { family: 'Outfit' } },
           max: 100
         },
         y: {
           grid: { display: false },
-          ticks: { color: '#e0e0e0', font: { family: 'Outfit', size: 12, weight: '500' } }
+          ticks: { color: 'HSL(325, 45%, 22%)', font: { family: 'Outfit', size: 12, weight: '500' } }
         }
       }
     }
@@ -843,8 +843,8 @@ function updateStats() {
       labels: ['For Men ♂', 'For Women ♀', 'Unisex ⚧'],
       datasets: [{
         data: genderData,
-        backgroundColor: ['rgba(52, 152, 219, 0.7)', 'rgba(232, 67, 147, 0.7)', 'rgba(155, 89, 182, 0.7)'],
-        borderColor: ['#3498db', '#e84393', '#9b59b6'],
+        backgroundColor: ['rgba(74, 185, 255, 0.65)', 'rgba(255, 105, 180, 0.65)', 'rgba(162, 155, 254, 0.65)'],
+        borderColor: ['HSL(200, 75%, 60%)', 'HSL(327, 85%, 66%)', 'HSL(275, 65%, 68%)'],
         borderWidth: 1
       }]
     },
@@ -854,7 +854,7 @@ function updateStats() {
       plugins: {
         legend: {
           position: 'bottom',
-          labels: { color: '#e0e0e0', font: { family: 'Outfit', size: 11 } }
+          labels: { color: 'HSL(325, 20%, 42%)', font: { family: 'Outfit', size: 11 } }
         }
       }
     }
