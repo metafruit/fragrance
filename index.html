@@ -174,6 +174,26 @@
           <form id="fragrance-form" onsubmit="saveCustomFragrance(event)">
             <!-- STEP 1: Basic Info -->
             <div class="wizard-step active" id="step-1">
+              <!-- Quick Paste from Fragrantica -->
+              <div class="quick-paste-box">
+                <div class="quick-paste-header" onclick="toggleQuickPaste()">
+                  <div class="header-title">
+                    <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--accent-gold);"></i>
+                    <span>Quick Import from Fragrantica</span>
+                  </div>
+                  <i class="fa-solid fa-chevron-down" id="quick-paste-chevron"></i>
+                </div>
+                <div class="quick-paste-body hidden" id="quick-paste-body">
+                  <p class="quick-paste-instructions">
+                    To auto-fill this form: open a fragrance page on Fragrantica, select the entire page text (press <code>Ctrl+A</code> or <code>Cmd+A</code>), copy it, and paste it below.
+                  </p>
+                  <textarea id="fragrantica-raw-paste" class="input-field" placeholder="Paste Fragrantica page text here..." rows="5" style="margin-bottom: 0.75rem; font-family: monospace; font-size: 0.8rem;"></textarea>
+                  <button type="button" class="btn-primary" onclick="processFragranticaPaste()" style="width: 100%; justify-content: center;">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Fill Scent Profile
+                  </button>
+                </div>
+              </div>
+
               <div class="form-group">
                 <label for="f-name">Fragrance Name *</label>
                 <input type="text" id="f-name" class="input-field" required placeholder="e.g. Aventus">

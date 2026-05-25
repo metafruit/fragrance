@@ -349,15 +349,15 @@ function openDrawer(perfumeId, isFromDb = false) {
   const baseNotesContainer = document.getElementById("d-notes-base");
 
   topNotesContainer.innerHTML = perfume.notes && perfume.notes.top.length ? 
-    perfume.notes.top.map(n => `<span class="note-tag"><i class="fa-solid fa-wind"></i> ${n}</span>`).join("") :
+    perfume.notes.top.map(n => `<span class="note-tag">${getNoteEmoji(n)} ${n}</span>`).join("") :
     `<span style="font-size: 0.85rem; color: var(--text-muted);">None documented</span>`;
 
   middleNotesContainer.innerHTML = perfume.notes && perfume.notes.middle.length ? 
-    perfume.notes.middle.map(n => `<span class="note-tag"><i class="fa-solid fa-heart"></i> ${n}</span>`).join("") :
+    perfume.notes.middle.map(n => `<span class="note-tag">${getNoteEmoji(n)} ${n}</span>`).join("") :
     `<span style="font-size: 0.85rem; color: var(--text-muted);">None documented</span>`;
 
   baseNotesContainer.innerHTML = perfume.notes && perfume.notes.base.length ? 
-    perfume.notes.base.map(n => `<span class="note-tag"><i class="fa-solid fa-anchor"></i> ${n}</span>`).join("") :
+    perfume.notes.base.map(n => `<span class="note-tag">${getNoteEmoji(n)} ${n}</span>`).join("") :
     `<span style="font-size: 0.85rem; color: var(--text-muted);">None documented</span>`;
 
   // Seasons bars
@@ -540,7 +540,7 @@ function renderNoteTags(tier) {
     const tag = document.createElement("div");
     tag.className = "tag";
     tag.innerHTML = `
-      <span>${note}</span>
+      <span>${getNoteEmoji(note)} ${note}</span>
       <i class="fa-solid fa-xmark" onclick="removeNoteTag('${note}', '${tier}')"></i>
     `;
     container.insertBefore(tag, input);
@@ -1021,4 +1021,592 @@ function syncToGoogleSheets() {
     showToast("Sync triggered! Check your Google Sheet to verify.");
     toggleSheetsModal(false);
   });
+}
+
+// ==========================================
+// FRAGRANTICA CLIPBOARD IMPORTER & NOTE EMOJIS
+// ==========================================
+
+const NOTE_EMOJIS = {
+  // Citrus
+  "bergamot": "🍋", "lemon": "🍋", "lime": "🍋", "grapefruit": "🍊", "orange": "🍊", "mandarin": "🍊", "mandarin orange": "🍊", "neroli": "🌸", "yuzu": "🍋", "citruses": "🍋", "citrus": "🍋", "verbena": "🌱",
+  // Fruits
+  "pineapple": "🍍", "apple": "🍎", "green apple": "🍏", "pear": "🍐", "peach": "🍑", "plum": "🍑", "cherry": "🍒", "coconut": "🥥", "blackcurrant": "🫐", "black currant": "🫐", "blackberry": "🫐", "raspberry": "🍓", "strawberry": "🍓", "litchi": "🍒", "fig": "🍃", "melon": "🍈", "pomegranate": "🍎", "red berries": "🍓", "fruits": "🍒", "apricot": "🍑",
+  // Flowers
+  "rose": "🌹", "turkish rose": "🌹", "bulgarian rose": "🌹", "jasmine": "🪷", "moroccan jasmine": "🪷", "lavender": "🪻", "iris": "🪻", "violet": "🪻", "violet accord": "🪻", "geranium": "🌸", "ylang-ylang": "🌼", "orange blossom": "🌸", "tuberose": "🪷", "peony": "🌸", "orchid": "🪻", "freesia": "🌸", "magnolia": "🌸", "gardenia": "🪷", "heliotrope": "🪻", "lily-of-the-valley": "🔔", "lily": "🪷", "osmanthus": "🌼", "carnation": "🌸", "white flowers": "🌸", "floral notes": "🌸", "floral": "🌸",
+  // Spices
+  "cinnamon": "🪵", "ginger": "🫚", "cardamom": "🌱", "pepper": "🫑", "pink pepper": "🫑", "sichuan pepper": "🌶️", "black pepper": "🌶️", "cloves": "🪵", "nutmeg": "🌰", "saffron": "🌱", "vanilla": "🍦", "madagascar vanilla": "🍦", "vanilla bean": "🍦", "black vanilla husk": "🍦", "star anise": "⭐️", "anise": "⭐️", "coriander": "🌱", "cumin": "🌱", "spicy notes": "🌶️",
+  // Woods
+  "cedar": "🪵", "cedarwood": "🪵", "sandalwood": "🪵", "vetiver": "🌾", "haitian vetiver": "🌾", "patchouli": "🌿", "oakmoss": "🌳", "moss": "🌳", "guaiac wood": "🪵", "birch": "🪵", "ebony": "🪵", "agarwood": "🪵", "oud": "🪵", "cypress": "🌲", "pine": "🌲", "pine needles": "🌲", "fir resin": "🌲", "woody notes": "🪵", "cashmere wood": "🪵", "cashmeran": "🪵", "papyrus": "📜",
+  // Sweet / Gourmand
+  "honey": "🍯", "cacao": "🍫", "chocolate": "🍫", "caramel": "🍯", "praline": "🍬", "tonka bean": "🫘", "tonka": "🫘", "coffee": "☕️", "rum": "🥃", "cognac": "🥃", "almond": "🥜", "bitter almond": "🥜", "sugar": "🍬", "sweet notes": "🍬",
+  // Amber / Resin / Musk
+  "amber": "☄️", "amberwood": "🪵", "ambergris": "🐋", "musk": "🐾", "white musk": "🐾", "incense": "💨", "myrrh": "🪵", "benzoin": "🪵", "labdanum": "🪵", "styrax": "🪵", "opoponax": "🪵", "resins": "🌲", "leather": "💼", "suede": "💼", "civet": "🐱", "castoreum": "🪵",
+  // Fresh / Green / Marine
+  "sea notes": "🌊", "marine notes": "🌊", "aquatic notes": "🌊", "calone": "🌊", "seaweed": "🌿", "salt": "🧂", "mint": "🌱", "green leaves": "🍃", "basil": "🌿", "sage": "🌿", "clary sage": "🌿", "rosemary": "🌿", "tea": "🍵", "green tea": "🍵", "black tea": "🍵", "aldehydes": "🫧", "tobacco": "🍂", "tobacco leaf": "🍂", "gunpowder": "💨"
+};
+
+function getNoteEmoji(noteName) {
+  if (!noteName) return "🍃";
+  const lower = noteName.toLowerCase().trim();
+  if (NOTE_EMOJIS[lower]) return NOTE_EMOJIS[lower];
+  for (const [key, emoji] of Object.entries(NOTE_EMOJIS)) {
+    if (lower.includes(key) || key.includes(lower)) {
+      return emoji;
+    }
+  }
+  return "🍃";
+}
+
+const KNOWN_BRANDS = [
+  "Chanel", "Dior", "Creed", "Tom Ford", "Maison Francis Kurkdjian", "Yves Saint Laurent", "YSL", 
+  "Giorgio Armani", "Armani", "Maison Margiela", "Le Labo", "Parfums de Marly", "Byredo", 
+  "Viktor & Rolf", "Hermes", "Dolce & Gabbana", "D&G", "Guerlain", "Versace", "Kilian", 
+  "Jean Paul Gaultier", "JPG", "Roja Dove", "Roja Parfums", "Amouage", "Xerjoff", "Initio Parfums Prives", 
+  "Initio", "Prada", "Gucci", "Givenchy", "Bvlgari", "Valentino", "Paco Rabanne", "Rabanne", 
+  "Lalique", "Mancera", "Montale", "Diptyque", "Penhaligon's", "Jo Malone", "Jo Malone London", 
+  "Acqua di Parma", "Cartier", "Narciso Rodriguez", "Hermès", "Burberry", "Hugo Boss", "Boss", 
+  "Calvin Klein", "CK", "Davidoff", "Dunhill", "Montblanc", "Azzaro", "Mugler", "Thierry Mugler", 
+  "Viktor&Rolf", "Lancome", "Lancôme", "Chloé", "Chloe", "Marc Jacobs", "Coach", "Jimmy Choo", 
+  "Ralph Lauren", "Estee Lauder", "Estée Lauder", "Carolina Herrera", "Tauer Parfums", 
+  "Tauer", "Nasomatto", "Orto Parisi", "Lorenzo Villoresi", "Serge Lutens", "Frederic Malle", 
+  "Frédéric Malle", "By Kilian", "L'Artisan Parfumeur", "L'Artisan", "Dyptique", "Etat Libre d'Orange", 
+  "ELDO", "Histoires de Parfums", "Memo Paris", "Memo", "Vilhelm Parfumerie", "Atelier Cologne", 
+  "Goldfield & Banks", "Juliette Has A Gun", "JHAG", "Escentric Molecules", "Bond No 9", 
+  "Zoologist", "Kajal", "Kerosene", "Nishane", "Maison Crivelli", "BDK Parfums", "BDK", 
+  "Afragance", "Phaedon", "Affinessence", "Teo Cabanel", "Frapin", "Carner Barcelona"
+];
+
+function toggleQuickPaste() {
+  const body = document.getElementById("quick-paste-body");
+  const chevron = document.getElementById("quick-paste-chevron");
+  body.classList.toggle("hidden");
+  if (body.classList.contains("hidden")) {
+    chevron.style.transform = "rotate(0deg)";
+  } else {
+    chevron.style.transform = "rotate(180deg)";
+  }
+}
+
+function processFragranticaPaste() {
+  const pasteText = document.getElementById("fragrantica-raw-paste").value;
+  if (!pasteText.trim()) {
+    alert("Please paste some text from a Fragrantica page first.");
+    return;
+  }
+
+  const result = parseFragranticaPaste(pasteText);
+
+  // 1. Basic Info
+  if (result.name) document.getElementById("f-name").value = result.name;
+  if (result.brand) document.getElementById("f-brand").value = result.brand;
+  if (result.image) document.getElementById("f-image").value = result.image;
+  if (result.concentration) document.getElementById("f-concentration").value = result.concentration;
+
+  // Gender
+  const genderRadios = document.getElementsByName("f-gender");
+  genderRadios.forEach(radio => {
+    if (radio.value === result.gender) {
+      radio.checked = true;
+    }
+  });
+
+  // 2. Notes
+  wizardNotes = result.notes;
+  renderNoteTags("top");
+  renderNoteTags("middle");
+  renderNoteTags("base");
+
+  // 3. Accords
+  wizardAccords = result.accords;
+  renderCustomAccords();
+
+  // 4. Seasons & Time of Day & Performance
+  document.getElementById("s-spring").value = result.seasons.spring;
+  document.getElementById("s-summer").value = result.seasons.summer;
+  document.getElementById("s-autumn").value = result.seasons.autumn;
+  document.getElementById("s-winter").value = result.seasons.winter;
+  updateSliderVal("spring");
+  updateSliderVal("summer");
+  updateSliderVal("autumn");
+  updateSliderVal("winter");
+
+  document.getElementById("s-day").value = result.timeOfDay.day;
+  updateTimeOfDaySlider(result.timeOfDay.day);
+
+  document.getElementById("f-longevity").value = result.longevity;
+  document.getElementById("f-sillage").value = result.sillage;
+
+  // Visual success notification and auto-close accordion
+  showToast("Successfully parsed Fragrantica data!");
+  document.getElementById("quick-paste-body").classList.add("hidden");
+  document.getElementById("quick-paste-chevron").style.transform = "rotate(0deg)";
+}
+
+function parseFragranticaPaste(text) {
+  const textLower = text.toLowerCase();
+  const lines = text.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+
+  // 1. Brand & Name extraction
+  let brand = "";
+  let name = "";
+  let titleLine = "";
+
+  for (let i = 0; i < Math.min(25, lines.length); i++) {
+    const line = lines[i];
+    if (/\b(for\s+men|for\s+women|for\s+women\s+and\s+men|for\s+men\s+and\s+women|perfume\s+for|cologne\s+for)\b/i.test(line)) {
+      titleLine = line;
+      break;
+    }
+  }
+  
+  if (!titleLine && lines.length > 0) {
+    titleLine = lines[0];
+  }
+
+  if (titleLine) {
+    let foundBrand = "";
+    for (const kb of KNOWN_BRANDS) {
+      const regex = new RegExp("\\b" + kb.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + "\\b", "i");
+      if (regex.test(titleLine)) {
+        foundBrand = kb;
+        break;
+      }
+    }
+    
+    if (foundBrand) {
+      brand = foundBrand;
+      let namePart = titleLine;
+      const brandRegex = new RegExp("\\b" + foundBrand.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + "\\b", "ig");
+      namePart = namePart.replace(brandRegex, "");
+      namePart = namePart.replace(/\b(for\s+men|for\s+women|for\s+women\s+and\s+men|for\s+men\s+and\s+women|perfume|cologne|unisex)\b.*/i, "");
+      namePart = namePart.replace(/\b(eau\s+de\s+parfum|eau\s+de\s+toilette|extrait\s+de\s+parfum|cologne|eau\s+de\s+cologne|parfum|edp|edt|aftershave)\b/i, "");
+      name = namePart.replace(/\s+/g, " ").replace(/^[\s,-]+|[\s,-]+$/g, "").trim();
+    } else {
+      const match = titleLine.match(/(.+?)\s+(?:for\s+men|for\s+women|for\s+women\s+and\s+men|for\s+men\s+and\s+women|unisex)/i);
+      if (match) {
+        const parts = match[1].split(/\s+/);
+        if (parts.length > 1) {
+          brand = parts[parts.length - 1];
+          name = parts.slice(0, -1).join(" ");
+        } else {
+          name = match[1];
+          brand = "Unknown Brand";
+        }
+      } else {
+        name = titleLine.replace(/^[\s,-]+|[\s,-]+$/g, "").trim();
+        brand = "Unknown Brand";
+      }
+    }
+  }
+
+  // 2. Gender Suitability
+  let gender = "unisex";
+  if (textLower.includes("for women and men") || textLower.includes("for men and women") || textLower.includes("unisex")) {
+    gender = "unisex";
+  } else if (textLower.includes("for women") || textLower.includes("perfume for women") || textLower.includes("women's")) {
+    gender = "women";
+  } else if (textLower.includes("for men") || textLower.includes("cologne for men") || textLower.includes("men's")) {
+    gender = "men";
+  }
+
+  // 3. Concentration
+  let concentration = "Eau de Parfum";
+  if (textLower.includes("eau de toilette") || textLower.includes(" edt")) {
+    concentration = "Eau de Toilette";
+  } else if (textLower.includes("extrait") || textLower.includes("pure parfum") || textLower.includes("extrait de parfum")) {
+    concentration = "Parfum";
+  } else if (textLower.includes("eau de cologne") || textLower.includes(" edc") || textLower.includes("cologne")) {
+    concentration = "Eau de Cologne";
+  } else if (textLower.includes("aftershave") || textLower.includes("body spray")) {
+    concentration = "Aftershave";
+  }
+
+  // 4. Image URL extraction if present
+  const imgMatch = text.match(/(https?:\/\/[^\s]+?\.(?:jpg|jpeg|png|webp|gif))/i);
+  let image = imgMatch ? imgMatch[1] : "";
+  if (image && image.includes("fimgs.net/images/perfume/")) {
+    // Keep it if it is a fimgs.net url
+  } else {
+    image = "";
+  }
+
+  // 5. Notes pyramid
+  let notes = { top: [], middle: [], base: [] };
+  const textOneLine = text.replace(/\s+/g, " ");
+  
+  const notesDescRegex = /(?:top\s+notes?\s+(?:are|is)\s+)(.+?);?\s*(?:middle\s+notes?\s+(?:are|is)|heart\s+notes?\s+(?:are|is))\s+(.+?);?\s*(?:base\s+notes?\s+(?:are|is))\s+(.+?)(?:\.|$)/i;
+  const descMatch = textOneLine.match(notesDescRegex);
+
+  if (descMatch) {
+    const parseList = (str) => {
+      return str
+        .replace(/,\s*and\s+/gi, ", ")
+        .replace(/\s+and\s+/gi, ", ")
+        .split(",")
+        .map(n => n.replace(/[\.\*;]/g, "").trim())
+        .filter(n => n.length > 0 && n.toLowerCase() !== "and" && n.toLowerCase() !== "the");
+    };
+    notes.top = parseList(descMatch[1]);
+    notes.middle = parseList(descMatch[2]);
+    notes.base = parseList(descMatch[3]);
+  }
+
+  if (notes.top.length === 0 && notes.middle.length === 0 && notes.base.length === 0) {
+    let currentTier = null;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (/^top\s+notes/i.test(line)) {
+        currentTier = "top";
+        continue;
+      } else if (/^(middle|heart)\s+notes/i.test(line)) {
+        currentTier = "middle";
+        continue;
+      } else if (/^base\s+notes/i.test(line)) {
+        currentTier = "base";
+        continue;
+      }
+      
+      if (currentTier) {
+        if (/^(longevity|sillage|vote|about|description|buy|bottle|sponsored|reviews|comments|main\s+accords)/i.test(line) || line.split(" ").length > 3) {
+          currentTier = null;
+          continue;
+        }
+        const parts = line.split(",").map(p => p.trim()).filter(p => p.length > 0 && p.length < 30);
+        for (const p of parts) {
+          if (p && !notes[currentTier].includes(p)) {
+            notes[currentTier].push(p);
+          }
+        }
+      }
+    }
+  }
+
+  // 6. Accords list
+  const commonAccords = [
+    "Woody", "Citrus", "Amber", "Warm Spicy", "Fresh Spicy", "Sweet", "Leather", "Vanilla", 
+    "Aromatic", "Coffee", "Floral", "Rose", "White Floral", "Marine", "Aquatic", "Aldehydic", 
+    "Powdery", "Musky", "Musk", "Fresh", "Green", "Earthy", "Smoky", "Balsamic", "Fruity", 
+    "Animalic", "Herbal", "Soft Spicy", "Patchouli", "Lavender", "Tropical", "Metallic", 
+    "Coconut", "Tobacco", "Salty", "Sour", "Bitter", "Mossy", "Coniferous", "Oud"
+  ];
+  
+  let accords = [];
+  let startAccords = false;
+  let accordLines = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^main accords/i.test(line)) {
+      startAccords = true;
+      continue;
+    }
+    if (startAccords) {
+      if (/^(pyramid|notes|longevity|sillage|vote|about|description|buy|bottle|sponsored|reviews)/i.test(line) || line.split(" ").length > 4) {
+        break;
+      }
+      accordLines.push(line);
+    }
+  }
+
+  if (accordLines.length > 0) {
+    let currentAccordName = "";
+    for (let line of accordLines) {
+      const numMatch = line.match(/^(\d+)%?$/);
+      if (numMatch && currentAccordName) {
+        accords.push({ name: currentAccordName, value: parseInt(numMatch[1]), color: getAccordColor(currentAccordName) });
+        currentAccordName = "";
+      } else {
+        const matchedAccord = commonAccords.find(a => a.toLowerCase() === line.toLowerCase());
+        if (matchedAccord) {
+          if (currentAccordName) {
+            accords.push({ name: currentAccordName, value: 0, color: getAccordColor(currentAccordName) });
+          }
+          currentAccordName = matchedAccord;
+        } else if (line.length > 2 && line.length < 20 && !line.includes(" ")) {
+          if (currentAccordName) {
+            accords.push({ name: currentAccordName, value: 0, color: getAccordColor(currentAccordName) });
+          }
+          currentAccordName = line.charAt(0).toUpperCase() + line.slice(1).toLowerCase();
+        }
+      }
+    }
+    if (currentAccordName) {
+      accords.push({ name: currentAccordName, value: 0, color: getAccordColor(currentAccordName) });
+    }
+    
+    let currentVal = 100;
+    accords = accords.map(acc => {
+      if (acc.value === 0) {
+        const newAcc = { ...acc, value: currentVal, color: getAccordColor(acc.name) };
+        currentVal = Math.max(30, currentVal - 15);
+        return newAcc;
+      }
+      currentVal = Math.max(30, acc.value - 15);
+      return acc;
+    });
+  } else {
+    let foundAccords = [];
+    for (const line of lines) {
+      for (const ca of commonAccords) {
+        if (new RegExp("\\b" + ca + "\\b", "i").test(line) && !foundAccords.includes(ca)) {
+          foundAccords.push(ca);
+        }
+      }
+      if (foundAccords.length >= 6) break;
+    }
+    let currentVal = 100;
+    accords = foundAccords.map(name => {
+      const acc = { name, value: currentVal, color: getAccordColor(name) };
+      currentVal = Math.max(30, currentVal - 15);
+      return acc;
+    });
+  }
+
+  // 7. Seasons
+  let seasons = { spring: 25, summer: 25, autumn: 25, winter: 25 };
+  const seasonsPattern = /(spring|summer|autumn|winter)[\s\(\:]*(\d+)/gi;
+  let seasonVotes = { spring: 0, summer: 0, autumn: 0, winter: 0 };
+  let sMatch;
+  let totalSeasonVotes = 0;
+
+  while ((sMatch = seasonsPattern.exec(textLower)) !== null) {
+    const season = sMatch[1].toLowerCase();
+    const votes = parseInt(sMatch[2]);
+    if (votes > 0) {
+      seasonVotes[season] = votes;
+      totalSeasonVotes += votes;
+    }
+  }
+
+  if (totalSeasonVotes === 0) {
+    for (let i = 0; i < lines.length - 1; i++) {
+      const line = lines[i].toLowerCase();
+      const nextLine = lines[i+1];
+      if (["spring", "summer", "autumn", "winter"].includes(line)) {
+        const numMatch = nextLine.match(/^(\d+)$/);
+        if (numMatch) {
+          const votes = parseInt(numMatch[1]);
+          seasonVotes[line] = votes;
+          totalSeasonVotes += votes;
+        }
+      }
+    }
+  }
+
+  if (totalSeasonVotes > 0) {
+    seasons.spring = Math.round((seasonVotes.spring / totalSeasonVotes) * 100);
+    seasons.summer = Math.round((seasonVotes.summer / totalSeasonVotes) * 100);
+    seasons.autumn = Math.round((seasonVotes.autumn / totalSeasonVotes) * 100);
+    seasons.winter = 100 - (seasons.spring + seasons.summer + seasons.autumn);
+  } else {
+    let springWeight = 25, summerWeight = 25, autumnWeight = 25, winterWeight = 25;
+    const allNotes = [...notes.top, ...notes.middle, ...notes.base].map(n => n.toLowerCase());
+    const allAccords = accords.map(a => a.name.toLowerCase());
+    
+    const freshTerms = ["citrus", "marine", "aquatic", "mint", "lemon", "lime", "bergamot", "orange", "grapefruit", "sea notes", "calone", "cucumber", "watermelon", "yuzu", "neroli"];
+    const warmTerms = ["amber", "vanilla", "cinnamon", "tobacco", "oud", "incense", "cloves", "nutmeg", "leather", "cocoa", "chocolate", "caramel", "honey", "benzoin", "myrrh"];
+    const springTerms = ["rose", "jasmine", "lavender", "iris", "violet", "lily", "peony", "green leaves", "basil", "herbal", "fresh spicy"];
+    
+    allNotes.forEach(note => {
+      if (freshTerms.some(term => note.includes(term))) { summerWeight += 15; springWeight += 10; winterWeight -= 10; }
+      if (warmTerms.some(term => note.includes(term))) { winterWeight += 15; autumnWeight += 12; summerWeight -= 15; }
+      if (springTerms.some(term => note.includes(term))) { springWeight += 15; summerWeight += 5; }
+    });
+    allAccords.forEach(acc => {
+      if (freshTerms.some(term => acc.includes(term))) { summerWeight += 20; springWeight += 10; winterWeight -= 10; }
+      if (warmTerms.some(term => acc.includes(term))) { winterWeight += 20; autumnWeight += 15; summerWeight -= 15; }
+      if (springTerms.some(term => acc.includes(term))) { springWeight += 15; summerWeight += 5; }
+    });
+    
+    springWeight = Math.max(5, springWeight);
+    summerWeight = Math.max(5, summerWeight);
+    autumnWeight = Math.max(5, autumnWeight);
+    winterWeight = Math.max(5, winterWeight);
+    
+    const totalWeight = springWeight + summerWeight + autumnWeight + winterWeight;
+    seasons.spring = Math.round((springWeight / totalWeight) * 100);
+    seasons.summer = Math.round((summerWeight / totalWeight) * 100);
+    seasons.autumn = Math.round((autumnWeight / totalWeight) * 100);
+    seasons.winter = 100 - (seasons.spring + seasons.summer + seasons.autumn);
+  }
+
+  // 8. Time of Day
+  let timeOfDay = { day: 50, night: 50 };
+  let dayVotes = 0;
+  let nightVotes = 0;
+  let timeMatch;
+  const timePattern = /\b(day|night)\b[\s\(\:]*(\d+)/gi;
+
+  while ((timeMatch = timePattern.exec(textLower)) !== null) {
+    const time = timeMatch[1].toLowerCase();
+    const votes = parseInt(timeMatch[2]);
+    if (time === "day") dayVotes = votes;
+    if (time === "night") nightVotes = votes;
+  }
+
+  if (dayVotes === 0 && nightVotes === 0) {
+    for (let i = 0; i < lines.length - 1; i++) {
+      const line = lines[i].toLowerCase();
+      const nextLine = lines[i+1];
+      if (line === "day") {
+        const numMatch = nextLine.match(/^(\d+)$/);
+        if (numMatch) dayVotes = parseInt(numMatch[1]);
+      } else if (line === "night") {
+        const numMatch = nextLine.match(/^(\d+)$/);
+        if (numMatch) nightVotes = parseInt(numMatch[1]);
+      }
+    }
+  }
+
+  if (dayVotes > 0 || nightVotes > 0) {
+    const totalTimeVotes = dayVotes + nightVotes;
+    timeOfDay.day = Math.round((dayVotes / totalTimeVotes) * 100);
+    timeOfDay.night = 100 - timeOfDay.day;
+  } else {
+    let dayWeight = 50;
+    let nightWeight = 50;
+    const allNotes = [...notes.top, ...notes.middle, ...notes.base].map(n => n.toLowerCase());
+    const allAccords = accords.map(a => a.name.toLowerCase());
+    
+    const dayTerms = ["citrus", "marine", "aquatic", "mint", "lemon", "lime", "bergamot", "orange", "grapefruit", "white flowers", "neroli", "tea", "fresh"];
+    const nightTerms = ["amber", "vanilla", "cinnamon", "tobacco", "oud", "incense", "leather", "smoky", "cacao", "chocolate", "caramel", "resins", "patchouli", "sandalwood"];
+    
+    allNotes.forEach(note => {
+      if (dayTerms.some(term => note.includes(term))) dayWeight += 10;
+      if (nightTerms.some(term => note.includes(term))) nightWeight += 10;
+    });
+    allAccords.forEach(acc => {
+      if (dayTerms.some(term => acc.includes(term))) dayWeight += 15;
+      if (nightTerms.some(term => acc.includes(term))) nightWeight += 15;
+    });
+    
+    timeOfDay.day = Math.round((dayWeight / (dayWeight + nightWeight)) * 100);
+    timeOfDay.night = 100 - timeOfDay.day;
+  }
+
+  // 9. Performance
+  let longevity = "Moderate";
+  let sillage = "Moderate";
+  let longVotes = { "very weak": 0, "weak": 0, "moderate": 0, "long lasting": 0, "eternal": 0 };
+  let silVotes = { "intimate": 0, "moderate": 0, "strong": 0, "enormous": 0 };
+
+  const longPattern = /\b(very\s+weak|weak|moderate|long\s+lasting|eternal)\b[\s\(\:]*(\d+)/gi;
+  let longMatch;
+  let totalLong = 0;
+  while ((longMatch = longPattern.exec(textLower)) !== null) {
+    const label = longMatch[1].toLowerCase();
+    const votes = parseInt(longMatch[2]);
+    if (votes > 0) {
+      longVotes[label] = votes;
+      totalLong += votes;
+    }
+  }
+
+  const silPattern = /\b(intimate|moderate|strong|enormous)\b[\s\(\:]*(\d+)/gi;
+  let silMatch;
+  let totalSil = 0;
+  while ((silMatch = silPattern.exec(textLower)) !== null) {
+    const label = silMatch[1].toLowerCase();
+    const votes = parseInt(silMatch[2]);
+    if (votes > 0) {
+      silVotes[label] = votes;
+      totalSil += votes;
+    }
+  }
+
+  if (totalLong === 0) {
+    const lLabels = ["very weak", "weak", "moderate", "long lasting", "eternal"];
+    for (let i = 0; i < lines.length - 1; i++) {
+      const line = lines[i].toLowerCase();
+      const nextLine = lines[i+1];
+      if (lLabels.includes(line)) {
+        const numMatch = nextLine.match(/^(\d+)$/);
+        if (numMatch) {
+          longVotes[line] = parseInt(numMatch[1]);
+          totalLong += parseInt(numMatch[1]);
+        }
+      }
+    }
+  }
+
+  if (totalSil === 0) {
+    const sLabels = ["intimate", "moderate", "strong", "enormous"];
+    for (let i = 0; i < lines.length - 1; i++) {
+      const line = lines[i].toLowerCase();
+      const nextLine = lines[i+1];
+      if (sLabels.includes(line)) {
+        const numMatch = nextLine.match(/^(\d+)$/);
+        if (numMatch) {
+          silVotes[line] = parseInt(numMatch[1]);
+          totalSil += parseInt(numMatch[1]);
+        }
+      }
+    }
+  }
+
+  if (totalLong > 0) {
+    let maxVotes = 0;
+    let bestLabel = "Moderate";
+    for (const [label, votes] of Object.entries(longVotes)) {
+      if (votes > maxVotes) {
+        maxVotes = votes;
+        bestLabel = label;
+      }
+    }
+    if (bestLabel === "very weak" || bestLabel === "weak") longevity = "Weak";
+    else if (bestLabel === "moderate") longevity = "Moderate";
+    else if (bestLabel === "long lasting") longevity = "Long Lasting";
+    else if (bestLabel === "eternal") longevity = "Eternal";
+  } else {
+    let weight = 0;
+    const allNotes = [...notes.top, ...notes.middle, ...notes.base].map(n => n.toLowerCase());
+    const heavyNotes = ["oud", "amber", "vanilla", "tobacco", "cinnamon", "patchouli", "sandalwood", "incense", "leather", "musk", "benzoin"];
+    allNotes.forEach(n => {
+      if (heavyNotes.some(hn => n.includes(hn))) weight += 2;
+    });
+    if (weight >= 6) longevity = "Eternal";
+    else if (weight >= 3) longevity = "Long Lasting";
+    else if (weight >= 1) longevity = "Moderate";
+    else longevity = "Weak";
+  }
+
+  if (totalSil > 0) {
+    let maxVotes = 0;
+    let bestLabel = "Moderate";
+    for (const [label, votes] of Object.entries(silVotes)) {
+      if (votes > maxVotes) {
+        maxVotes = votes;
+        bestLabel = label;
+      }
+    }
+    if (bestLabel === "intimate") sillage = "Intimate";
+    else if (bestLabel === "moderate") sillage = "Moderate";
+    else if (bestLabel === "strong") sillage = "Strong";
+    else if (bestLabel === "enormous") sillage = "Enormous";
+  } else {
+    let weight = 0;
+    const allNotes = [...notes.top, ...notes.middle, ...notes.base].map(n => n.toLowerCase());
+    const heavyNotes = ["oud", "amber", "vanilla", "tobacco", "cinnamon", "patchouli", "sandalwood", "incense", "leather", "musk", "benzoin"];
+    allNotes.forEach(n => {
+      if (heavyNotes.some(hn => n.includes(hn))) weight += 2;
+    });
+    if (weight >= 5) sillage = "Strong";
+    else if (weight >= 2) sillage = "Moderate";
+    else sillage = "Intimate";
+  }
+
+  return {
+    name,
+    brand,
+    gender,
+    concentration,
+    image,
+    notes,
+    accords,
+    seasons,
+    timeOfDay,
+    longevity,
+    sillage
+  };
 }

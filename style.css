@@ -895,6 +895,72 @@ body {
   color: var(--accent-gold);
 }
 
+/* Quick Paste from Fragrantica */
+.quick-paste-box {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.quick-paste-box:hover {
+  border-color: rgba(212, 175, 55, 0.4);
+}
+
+.quick-paste-header {
+  padding: 1rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.quick-paste-header:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.quick-paste-header .header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.quick-paste-header i {
+  transition: transform 0.3s ease;
+}
+
+.quick-paste-body {
+  padding: 1.25rem;
+  border-top: 1px solid var(--border-color);
+  background-color: rgba(0, 0, 0, 0.1);
+  transition: max-height 0.3s ease-out, opacity 0.3s ease;
+}
+
+.quick-paste-body.hidden {
+  display: none;
+}
+
+.quick-paste-instructions {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.quick-paste-instructions code {
+  background-color: var(--bg-secondary);
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  font-family: monospace;
+  color: var(--accent-gold);
+}
+
 .form-group {
   margin-bottom: 1.5rem;
 }
