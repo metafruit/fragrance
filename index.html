@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScentSpace — Your Fragrance Library & Analytics</title>
+  <meta name="description" content="A premium fragrance library and collection manager. Catalog your scents, view notes, accords, performance, and visualize collection statistics.">
+  
+  <!-- FontAwesome for Premium Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Chart.js for High-Fidelity Interactive Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>ScentSpace</h1>
+        <p>Fragrance Library</p>
+      </div>
+      
+      <nav>
+        <ul class="nav-links">
+          <li>
+            <div id="nav-collection" class="nav-item active" onclick="switchView('collection')">
+              <i class="fa-solid fa-bottle-droplet"></i>
+              <span>My Collection</span>
+            </div>
+          </li>
+          <li>
+            <div id="nav-discover" class="nav-item" onclick="switchView('discover')">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <span>Discover Database</span>
+            </div>
+          </li>
+          <li>
+            <div id="nav-wizard" class="nav-item" onclick="switchView('wizard')">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+              <span>Scent Wizard</span>
+            </div>
+          </li>
+          <li>
+            <div id="nav-stats" class="nav-item" onclick="switchView('stats')">
+              <i class="fa-solid fa-chart-pie"></i>
+              <span>Scent Analytics</span>
+            </div>
+          </li>
+        </ul>
+      </nav>
+      
+      <div class="sidebar-footer">
+        <button class="btn-import-export" onclick="exportCollection()">
+          <i class="fa-solid fa-download"></i>
+          <span>Export Collection</span>
+        </button>
+        <button class="btn-import-export" onclick="triggerImport()">
+          <i class="fa-solid fa-upload"></i>
+          <span>Import JSON</span>
+        </button>
+        <button class="btn-import-export" onclick="toggleSheetsModal(true)" style="border-color: rgba(212, 175, 55, 0.3);">
+          <i class="fa-solid fa-table"></i>
+          <span>Google Sheet Sync</span>
+        </button>
+        <input type="file" id="import-file-input" style="display: none;" accept=".json" onchange="importCollection(event)">
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+
+      <!-- SECTION 1: MY COLLECTION -->
+      <section id="section-collection" class="view-section active">
+        <div class="view-header">
+          <div>
+            <h2>My Collection</h2>
+            <p>Browse and explore your fragrance closet.</p>
+          </div>
+          <div>
+            <button class="btn-primary" onclick="switchView('wizard')">
+              <i class="fa-solid fa-plus"></i> Add Fragrance
+            </button>
+          </div>
+        </div>
+
+        <div class="dashboard-actions">
+          <div class="search-wrapper">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="collection-search" class="search-input" placeholder="Search by name, brand, or note..." oninput="filterCollection()">
+          </div>
+          
+          <select id="filter-gender" class="filter-select" onchange="filterCollection()">
+            <option value="all">All Genders</option>
+            <option value="men">For Men</option>
+            <option value="women">For Women</option>
+            <option value="unisex">Unisex</option>
+          </select>
+
+          <select id="filter-season" class="filter-select" onchange="filterCollection()">
+            <option value="all">All Seasons</option>
+            <option value="spring">Spring Favorites</option>
+            <option value="summer">Summer Favorites</option>
+            <option value="autumn">Autumn Favorites</option>
+            <option value="winter">Winter Favorites</option>
+          </select>
+        </div>
+
+        <div class="cards-grid" id="collection-grid">
+          <!-- Dynamic cards populated by app.js -->
+        </div>
+
+        <!-- Empty State Container -->
+        <div id="collection-empty" class="empty-state" style="display: none;">
+          <i class="fa-solid fa-box-open"></i>
+          <h3>No fragrances found</h3>
+          <p>Your library is empty. Start adding fragrances from our database, manual wizard, or import a JSON backup.</p>
+          <div style="display: flex; justify-content: center; gap: 1rem;">
+            <button class="btn-primary" onclick="switchView('discover')">
+              <i class="fa-solid fa-globe"></i> Browse Database
+            </button>
+            <button class="btn-secondary" onclick="switchView('wizard')">
+              <i class="fa-solid fa-keyboard"></i> Manual Wizard
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 2: DISCOVER DATABASE -->
+      <section id="section-discover" class="view-section">
+        <div class="view-header">
+          <div>
+            <h2>Discover Database</h2>
+            <p>Explore Fragrantica-indexed profiles and add them to your shelf.</p>
+          </div>
+        </div>
+
+        <div class="discover-hero">
+          <h3>Olfactory Search Engine</h3>
+          <p>Search our built-in library of 25 popular fragrance profiles or import scraped files from Fragrantica.</p>
+          <div class="search-wrapper" style="max-width: 600px; margin: 0 auto;">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="database-search" class="search-input" placeholder="Search 25+ iconic scents..." oninput="searchDatabase()">
+          </div>
+        </div>
+
+        <div class="cards-grid" id="database-grid">
+          <!-- Database match cards populated by app.js -->
+        </div>
+      </section>
+
+      <!-- SECTION 3: SCENT WIZARD -->
+      <section id="section-wizard" class="view-section">
+        <div class="view-header">
+          <div>
+            <h2>Scent Wizard</h2>
+            <p>Add a new scent profile to your wardrobe.</p>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <!-- Progress Indicator -->
+          <div class="step-indicator">
+            <div class="indicator-dot active" id="dot-1">1</div>
+            <div class="indicator-dot" id="dot-2">2</div>
+            <div class="indicator-dot" id="dot-3">3</div>
+          </div>
+
+          <form id="fragrance-form" onsubmit="saveCustomFragrance(event)">
+            <!-- STEP 1: Basic Info -->
+            <div class="wizard-step active" id="step-1">
+              <div class="form-group">
+                <label for="f-name">Fragrance Name *</label>
+                <input type="text" id="f-name" class="input-field" required placeholder="e.g. Aventus">
+              </div>
+              <div class="form-group">
+                <label for="f-brand">Brand / Designer *</label>
+                <input type="text" id="f-brand" class="input-field" required placeholder="e.g. Creed">
+              </div>
+              <div class="form-group">
+                <label for="f-image">Image URL (Optional)</label>
+                <input type="url" id="f-image" class="input-field" placeholder="e.g. https://fimgs.net/images/perfume/o.xxxx.jpg">
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="f-concentration">Concentration</label>
+                  <select id="f-concentration" class="input-field">
+                    <option value="Eau de Parfum">Eau de Parfum (EDP)</option>
+                    <option value="Eau de Toilette">Eau de Toilette (EDT)</option>
+                    <option value="Parfum">Parfum / Extrait</option>
+                    <option value="Eau de Cologne">Eau de Cologne</option>
+                    <option value="Aftershave">Aftershave / Body Spray</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Gender Suitability</label>
+                  <div class="gender-selector">
+                    <label class="gender-option">
+                      <input type="radio" name="f-gender" value="men" checked>
+                      <div class="gender-box men-box">
+                        <i class="fa-solid fa-mars"></i>
+                        <span>Men</span>
+                      </div>
+                    </label>
+                    <label class="gender-option">
+                      <input type="radio" name="f-gender" value="women">
+                      <div class="gender-box women-box">
+                        <i class="fa-solid fa-venus"></i>
+                        <span>Women</span>
+                      </div>
+                    </label>
+                    <label class="gender-option">
+                      <input type="radio" name="f-gender" value="unisex">
+                      <div class="gender-box unisex-box">
+                        <i class="fa-solid fa-venus-mars"></i>
+                        <span>Unisex</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- STEP 2: Olfactory Pyramid & Accords -->
+            <div class="wizard-step" id="step-2">
+              <div class="form-group">
+                <label>Olfactory Notes (Pyramid)</label>
+                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+                  Type a note and press <strong>Enter</strong> or comma to add. Autocomplete dropdown is active.
+                </p>
+                
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                  <div>
+                    <label style="font-size: 0.8rem;">Top Notes (Initial blast)</label>
+                    <div class="tag-input-container" id="top-notes-container">
+                      <input type="text" class="tag-input-field" list="popular-notes" placeholder="e.g. Bergamot, Lemon, Mint" onkeydown="handleTagInput(event, 'top')" oninput="handleTagInputChange(event, 'top')">
+                    </div>
+                  </div>
+                  <div>
+                    <label style="font-size: 0.8rem;">Middle Notes (Heart notes)</label>
+                    <div class="tag-input-container" id="middle-notes-container">
+                      <input type="text" class="tag-input-field" list="popular-notes" placeholder="e.g. Lavender, Rose, Jasmine" onkeydown="handleTagInput(event, 'middle')" oninput="handleTagInputChange(event, 'middle')">
+                    </div>
+                  </div>
+                  <div>
+                    <label style="font-size: 0.8rem;">Base Notes (Dry down)</label>
+                    <div class="tag-input-container" id="base-notes-container">
+                      <input type="text" class="tag-input-field" list="popular-notes" placeholder="e.g. Vanilla, Amber, Cedarwood" onkeydown="handleTagInput(event, 'base')" oninput="handleTagInputChange(event, 'base')">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Accords Generator -->
+              <div class="form-group" style="margin-top: 2rem;">
+                <label>Main Accords</label>
+                <div class="accord-creator-row">
+                  <input type="text" id="new-accord-name" class="input-field" style="flex: 2;" placeholder="e.g. Woody, Citrus, Sweet">
+                  <input type="number" id="new-accord-value" class="input-field" style="flex: 1;" placeholder="Intensity (1-100)" min="1" max="100">
+                  <button type="button" class="btn-secondary" onclick="addCustomAccord()">Add</button>
+                </div>
+                <div class="accord-creator-list" id="added-accords-list">
+                  <!-- Listed custom accords here -->
+                </div>
+              </div>
+            </div>
+
+            <!-- STEP 3: Season, Occasion & Ratings -->
+            <div class="wizard-step" id="step-3">
+              <div class="form-group">
+                <label>Season Suitability (Weight distribution - total does not need to equal 100)</label>
+                <div class="slider-group">
+                  <div class="slider-row">
+                    <span class="slider-name"><i class="fa-solid fa-leaf" style="color: #2ecc71; margin-right: 0.5rem;"></i> Spring</span>
+                    <input type="range" class="slider-input" id="s-spring" min="0" max="100" value="25" oninput="updateSliderVal('spring')">
+                    <span class="slider-val" id="val-spring">25%</span>
+                  </div>
+                  <div class="slider-row">
+                    <span class="slider-name"><i class="fa-solid fa-sun" style="color: #f1c40f; margin-right: 0.5rem;"></i> Summer</span>
+                    <input type="range" class="slider-input" id="s-summer" min="0" max="100" value="25" oninput="updateSliderVal('summer')">
+                    <span class="slider-val" id="val-summer">25%</span>
+                  </div>
+                  <div class="slider-row">
+                    <span class="slider-name"><i class="fa-solid fa-leaf" style="color: #e67e22; margin-right: 0.5rem;"></i> Autumn</span>
+                    <input type="range" class="slider-input" id="s-autumn" min="0" max="100" value="25" oninput="updateSliderVal('autumn')">
+                    <span class="slider-val" id="val-autumn">25%</span>
+                  </div>
+                  <div class="slider-row">
+                    <span class="slider-name"><i class="fa-solid fa-snowflake" style="color: #3498db; margin-right: 0.5rem;"></i> Winter</span>
+                    <input type="range" class="slider-input" id="s-winter" min="0" max="100" value="25" oninput="updateSliderVal('winter')">
+                    <span class="slider-val" id="val-winter">25%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Time of Day Split (Day vs Night)</label>
+                  <div class="slider-group">
+                    <div class="slider-row">
+                      <span class="slider-name"><i class="fa-solid fa-sun" style="color: #f39c12; margin-right: 0.5rem;"></i> Day</span>
+                      <input type="range" class="slider-input" id="s-day" min="0" max="100" value="50" oninput="updateTimeOfDaySlider(this.value)">
+                      <span class="slider-val" id="val-day">50%</span>
+                    </div>
+                    <div class="slider-row">
+                      <span class="slider-name"><i class="fa-solid fa-moon" style="color: #9b59b6; margin-right: 0.5rem;"></i> Night</span>
+                      <span class="slider-val" id="val-night" style="margin-left: auto; text-align: right; width: 100%;">50%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>Performance Metrics</label>
+                  <div class="slider-group" style="padding: 1.15rem 1.5rem;">
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                      <label style="font-size: 0.8rem; margin-bottom: 0.25rem;">Longevity</label>
+                      <select id="f-longevity" class="input-field">
+                        <option value="Weak">Weak (1-3 hours)</option>
+                        <option value="Moderate" selected>Moderate (3-6 hours)</option>
+                        <option value="Long Lasting">Long Lasting (6-12 hours)</option>
+                        <option value="Eternal">Eternal (12+ hours)</option>
+                      </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label style="font-size: 0.8rem; margin-bottom: 0.25rem;">Sillage (Projection)</label>
+                      <select id="f-sillage" class="input-field">
+                        <option value="Intimate">Intimate (Skin scent)</option>
+                        <option value="Moderate" selected>Moderate (Arm's length)</option>
+                        <option value="Strong">Strong (Fills half room)</option>
+                        <option value="Enormous">Enormous (Leaves heavy trail)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="wizard-buttons">
+              <button type="button" class="btn-secondary" id="btn-back" onclick="wizardBack()" style="visibility: hidden;">Back</button>
+              <button type="button" class="btn-primary" id="btn-next" onclick="wizardNext()">Next</button>
+              <button type="submit" class="btn-primary" id="btn-submit" style="display: none;">Save Fragrance</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- SECTION 4: STATISTICS -->
+      <section id="section-stats" class="view-section">
+        <div class="view-header">
+          <div>
+            <h2>Scent Analytics</h2>
+            <p>Visual statistics and data intelligence of your closet.</p>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <!-- Overview Cards -->
+          <div style="display: flex; flex-direction: column; gap: 2rem;">
+            <div class="stats-subgrid">
+              <div class="stat-box">
+                <div class="stat-value" id="stat-total-bottles">0</div>
+                <div class="stat-desc">Total Bottles</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-value" id="stat-avg-longevity">-</div>
+                <div class="stat-desc">Avg Longevity</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-value" id="stat-signature-accord">-</div>
+                <div class="stat-desc">Dominant Accord</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-value" id="stat-primary-season">-</div>
+                <div class="stat-desc">Ideal Season</div>
+              </div>
+            </div>
+
+            <!-- Season distribution chart card -->
+            <div class="stats-card">
+              <h3 class="drawer-section-title"><i class="fa-solid fa-leaf"></i> Seasonal Preferences</h3>
+              <div style="position: relative; height: 220px; width: 100%;">
+                <canvas id="chart-seasons"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sideways statistics (Accords breakdown, gender distribution) -->
+          <div style="display: flex; flex-direction: column; gap: 2rem;">
+            <div class="stats-card">
+              <h3 class="drawer-section-title"><i class="fa-solid fa-mars-venus"></i> Gender Profile</h3>
+              <div style="position: relative; height: 180px; width: 100%; display: flex; justify-content: center; margin-bottom: 1rem;">
+                <canvas id="chart-gender"></canvas>
+              </div>
+              <div class="chart-legend" id="stats-gender-profile" style="display: none;">
+                <!-- Fallback text legend -->
+              </div>
+            </div>
+            
+            <div class="stats-card">
+              <h3 class="drawer-section-title"><i class="fa-solid fa-chart-bar"></i> Scent Accord Analysis</h3>
+              <div style="position: relative; height: 260px; width: 100%;">
+                <canvas id="chart-accords"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- DETAIL DRAWER (SLIDE OUT OVERLAY) -->
+  <div id="detail-drawer" class="drawer-overlay" onclick="closeDrawer(event)">
+    <div class="drawer-container" onclick="event.stopPropagation()">
+      <div class="drawer-header">
+        <div style="display: flex; gap: 1.25rem; align-items: center; width: calc(100% - 40px);">
+          <div id="d-image-wrapper" class="drawer-image-wrapper">
+            <!-- Image loaded here -->
+          </div>
+          <div class="drawer-title-group" style="flex: 1; min-width: 0;">
+            <span class="brand-tag" id="d-brand">BRAND</span>
+            <h3 id="d-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Fragrance Name</h3>
+            <span id="d-concentration" style="font-size: 0.85rem; color: var(--text-secondary);">EDP</span>
+          </div>
+        </div>
+        <button class="btn-close-drawer" onclick="toggleDrawer(false)">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      
+      <div class="drawer-body" id="d-body">
+        
+        <!-- Accord details -->
+        <div>
+          <h4 class="drawer-section-title"><i class="fa-solid fa-wind"></i> Main Accords</h4>
+          <div class="accords-list" id="d-accords">
+            <!-- Dynamically populated accords -->
+          </div>
+        </div>
+
+        <!-- Note Pyramid -->
+        <div>
+          <h4 class="drawer-section-title"><i class="fa-solid fa-layer-group"></i> Olfactory Pyramid</h4>
+          <div class="notes-pyramid">
+            <div class="pyramid-tier top-tier">
+              <span class="tier-title">Top Notes</span>
+              <div class="tier-notes" id="d-notes-top">
+                <!-- Top notes -->
+              </div>
+            </div>
+            <div class="pyramid-tier middle-tier">
+              <span class="tier-title">Middle Notes</span>
+              <div class="tier-notes" id="d-notes-middle">
+                <!-- Middle notes -->
+              </div>
+            </div>
+            <div class="pyramid-tier base-tier">
+              <span class="tier-title">Base Notes</span>
+              <div class="tier-notes" id="d-notes-base">
+                <!-- Base notes -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Season suitability -->
+        <div>
+          <h4 class="drawer-section-title"><i class="fa-solid fa-cloud-sun"></i> Seasonal Guide</h4>
+          <div class="seasons-bars" id="d-seasons">
+            <!-- Seasons bars -->
+          </div>
+        </div>
+
+        <!-- Time of Day suitability -->
+        <div>
+          <h4 class="drawer-section-title"><i class="fa-solid fa-clock"></i> Ideal Time of Day</h4>
+          <div class="time-gauge">
+            <div class="time-option day">
+              <i class="fa-solid fa-sun"></i>
+              <span>Day</span>
+              <span class="time-percentage" id="d-time-day">50%</span>
+            </div>
+            <div class="time-slider-wrapper">
+              <div class="time-track-bar">
+                <div class="time-marker-thumb" id="d-time-thumb" style="left: 50%;"></div>
+              </div>
+            </div>
+            <div class="time-option night">
+              <i class="fa-solid fa-moon"></i>
+              <span>Night</span>
+              <span class="time-percentage" id="d-time-night">50%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Longevity & Sillage distributions -->
+        <div class="stats-scale-group">
+          <div class="scale-container">
+            <h4 class="drawer-section-title" style="margin-bottom: 0.5rem;"><i class="fa-solid fa-stopwatch"></i> Longevity</h4>
+            <div class="scale-rating-val" id="d-longevity-label">Moderate</div>
+            <div class="scale-visual-distribution" id="d-longevity-dist">
+              <!-- Longevity distribution rows -->
+            </div>
+          </div>
+          <div class="scale-container">
+            <h4 class="drawer-section-title" style="margin-bottom: 0.5rem;"><i class="fa-solid fa-spray-can"></i> Sillage</h4>
+            <div class="scale-rating-val" id="d-sillage-label">Moderate</div>
+            <div class="scale-visual-distribution" id="d-sillage-dist">
+              <!-- Sillage distribution rows -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast" class="toast-notification">
+    <i class="fa-solid fa-circle-check"></i>
+    <span id="toast-message">Success message here!</span>
+  </div>
+
+  <!-- Note suggestions datalist for auto-completion in wizard -->
+  <datalist id="popular-notes">
+    <option value="Bergamot"></option>
+    <option value="Lemon"></option>
+    <option value="Mandarin Orange"></option>
+    <option value="Grapefruit"></option>
+    <option value="Orange"></option>
+    <option value="Lime"></option>
+    <option value="Pineapple"></option>
+    <option value="Apple"></option>
+    <option value="Green Apple"></option>
+    <option value="Pear"></option>
+    <option value="Litchi"></option>
+    <option value="Peach"></option>
+    <option value="Blackcurrant"></option>
+    <option value="Mint"></option>
+    <option value="Lavender"></option>
+    <option value="Rose"></option>
+    <option value="Turkish Rose"></option>
+    <option value="Jasmine"></option>
+    <option value="Geranium"></option>
+    <option value="Iris"></option>
+    <option value="Violet"></option>
+    <option value="Neroli"></option>
+    <option value="Orange Blossom"></option>
+    <option value="Patchouli"></option>
+    <option value="Cedarwood"></option>
+    <option value="Cedar"></option>
+    <option value="Sandalwood"></option>
+    <option value="Vetiver"></option>
+    <option value="Oud (Agarwood)"></option>
+    <option value="Vanilla"></option>
+    <option value="Amber"></option>
+    <option value="Musk"></option>
+    <option value="White Musk"></option>
+    <option value="Oakmoss"></option>
+    <option value="Leather"></option>
+    <option value="Tobacco"></option>
+    <option value="Tobacco Leaf"></option>
+    <option value="Incense"></option>
+    <option value="Cardamom"></option>
+    <option value="Ginger"></option>
+    <option value="Cinnamon"></option>
+    <option value="Pepper"></option>
+    <option value="Sichuan Pepper"></option>
+    <option value="Pink Pepper"></option>
+    <option value="Tonka Bean"></option>
+    <option value="Saffron"></option>
+    <option value="Cacao"></option>
+    <option value="Benzoin"></option>
+    <option value="Ambergris"></option>
+    <option value="Flint"></option>
+    <option value="Sea Notes"></option>
+    <option value="Aldehydes"></option>
+  </datalist>
+
+  <!-- GOOGLE SHEETS SYNC MODAL -->
+  <div id="sheets-modal" class="drawer-overlay" onclick="closeSheetsModal(event)">
+    <div class="drawer-container" style="max-width: 500px; height: auto; max-height: 95vh; border-radius: 20px 20px 0 0; margin-top: auto; border-bottom: none; border-left: none; border-right: none; border-top: 1px solid var(--border-color);" onclick="event.stopPropagation()">
+      <div class="drawer-header">
+        <div class="drawer-title-group">
+          <span class="brand-tag">INTEGRATIONS</span>
+          <h3>Google Sheets Sync</h3>
+        </div>
+        <button class="btn-close-drawer" onclick="toggleSheetsModal(false)">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="drawer-body" style="gap: 1.5rem; padding: 2rem;">
+        <p style="font-size: 0.9rem; color: var(--text-secondary);">
+          Automatically sync your complete fragrance collection closet directly to your Google Spreadsheet.
+        </p>
+        
+        <div class="form-group">
+          <label for="sheets-url">Google Apps Script Web App URL</label>
+          <input type="url" id="sheets-url" class="input-field" placeholder="https://script.google.com/macros/s/.../exec" oninput="saveSheetsUrl()">
+        </div>
+
+        <button class="btn-primary" id="btn-sync-sheets" style="width: 100%; justify-content: center;" onclick="syncToGoogleSheets()">
+          <i class="fa-solid fa-arrows-rotate"></i> Sync Collection Now
+        </button>
+
+        <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem; margin-top: 0.5rem;">
+          <h4 style="font-size: 0.85rem; text-transform: uppercase; color: var(--accent-gold); margin-bottom: 0.5rem; letter-spacing: 1px;">Setup Instructions:</h4>
+          <ol style="font-size: 0.8rem; color: var(--text-secondary); padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.4rem;">
+            <li>Create a new Google Sheet at <a href="https://sheets.new" target="_blank" style="color: var(--accent-gold); text-decoration: underline;">sheets.new</a>.</li>
+            <li>In the menu, go to <strong>Extensions</strong> &rarr; <strong>Apps Script</strong>.</li>
+            <li>Replace all default code with the ScentSpace script (provided in your project folder as <code>google_sheet_code.js</code>).</li>
+            <li>Click Save, then click <strong>Deploy</strong> &rarr; <strong>New deployment</strong>.</li>
+            <li>Click the gear icon, select <strong>Web app</strong>. Set execution as <strong>Me</strong> and Access as <strong>Anyone</strong>.</li>
+            <li>Click <strong>Deploy</strong>, authorize permissions, and copy the generated <strong>Web App URL</strong>.</li>
+            <li>Paste the URL in the box above and click Sync!</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import the database first, then app script -->
+  <script src="db.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
