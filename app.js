@@ -1610,3 +1610,150 @@ function parseFragranticaPaste(text) {
     sillage
   };
 }
+
+function switchImportTab(type) {
+  const urlTab = document.getElementById("tab-url-btn");
+  const textTab = document.getElementById("tab-text-btn");
+  const urlSection = document.getElementById("import-url-section");
+  const textSection = document.getElementById("import-text-section");
+
+  if (type === "url") {
+    urlTab.classList.add("active");
+    urlTab.style.color = "var(--accent-gold)";
+    urlTab.style.fontWeight = "600";
+    
+    textTab.classList.remove("active");
+    textTab.style.color = "var(--text-secondary)";
+    textTab.style.fontWeight = "400";
+    
+    urlSection.classList.remove("hidden");
+    textSection.classList.add("hidden");
+  } else {
+    textTab.classList.add("active");
+    textTab.style.color = "var(--accent-gold)";
+    textTab.style.fontWeight = "600";
+    
+    urlTab.classList.remove("active");
+    urlTab.style.color = "var(--text-secondary)";
+    urlTab.style.fontWeight = "400";
+    
+    textSection.classList.remove("hidden");
+    urlSection.classList.add("hidden");
+  }
+}
+
+async function importFromFragranticaURL() {
+  const url = document.getElementById("fragrantica-url-input").value.trim();
+  const statusSpan = document.getElementById("import-url-status");
+  const btn = document.getElementById("btn-import-url");
+  
+  if (!url) {
+    alert("Please enter a valid Fragrantica URL first.");
+    return;
+  }
+  
+  if (!url.startsWith("https://www.fragrantica.com/perfume/")) {
+    alert("Please enter a valid Fragrantica perfume URL, e.g.\nhttps://www.fragrantica.com/perfume/Dior/Sauvage-31861.html");
+    return;
+  }
+  
+  statusSpan.innerText = "Attempting to fetch page via CORS proxy...";
+  statusSpan.style.color = "var(--accent-gold)";
+  btn.disabled = true;
+  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Fetching...`;
+  
+  try {
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+    const response = await fetch(proxyUrl);
+    if (!response.ok) throw new Error("Network response was not ok");
+    const htmlText = await response.text();
+    
+    if (htmlText.includes("cloudflare") || htmlText.includes("Checking your browser") || htmlText.includes("Access denied")) {
+      throw new Error("Cloudflare Bot Protection blocked direct scraping.");
+    }
+    
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, "text/html");
+    
+    const bodyText = doc.body ? doc.body.textContent : "";
+    if (!bodyText || bodyText.length < 500) {
+      throw new Error("Empty page or parsing failed.");
+    }
+    
+    const result = parseFragranticaPaste(bodyText);
+    
+    const h1 = doc.querySelector('h1[itemprop="name"]');
+    if (h1 && h1.textContent.trim()) {
+      let parsedTitle = h1.textContent.trim();
+      const brandElem = doc.querySelector('[itemprop="brand"]');
+      let parsedBrand = brandElem ? brandElem.textContent.trim() : "";
+      
+      if (parsedBrand) {
+        result.brand = parsedBrand;
+        if (parsedTitle.toLowerCase().includes(parsedBrand.toLowerCase())) {
+          parsedTitle = parsedTitle.replace(new RegExp(parsedBrand, "gi"), "").trim();
+        }
+      }
+      result.name = parsedTitle.replace(/^[\s,-]+|[\s,-]+$/g, "").trim();
+    }
+    
+    const ogImage = doc.querySelector('meta[property="og:image"]');
+    if (ogImage && ogImage.getAttribute("content")) {
+      result.image = ogImage.getAttribute("content").trim();
+    }
+    
+    // Populate form fields
+    if (result.name) document.getElementById("f-name").value = result.name;
+    if (result.brand) document.getElementById("f-brand").value = result.brand;
+    if (result.image) document.getElementById("f-image").value = result.image;
+    if (result.concentration) document.getElementById("f-concentration").value = result.concentration;
+    
+    const genderRadios = document.getElementsByName("f-gender");
+    genderRadios.forEach(radio => {
+      if (radio.value === result.gender) {
+        radio.checked = true;
+      }
+    });
+    
+    wizardNotes = result.notes;
+    renderNoteTags("top");
+    renderNoteTags("middle");
+    renderNoteTags("base");
+    
+    wizardAccords = result.accords;
+    renderCustomAccords();
+    
+    document.getElementById("s-spring").value = result.seasons.spring;
+    document.getElementById("s-summer").value = result.seasons.summer;
+    document.getElementById("s-autumn").value = result.seasons.autumn;
+    document.getElementById("s-winter").value = result.seasons.winter;
+    updateSliderVal("spring");
+    updateSliderVal("summer");
+    updateSliderVal("autumn");
+    updateSliderVal("winter");
+    
+    document.getElementById("s-day").value = result.timeOfDay.day;
+    updateTimeOfDaySlider(result.timeOfDay.day);
+    
+    document.getElementById("f-longevity").value = result.longevity;
+    document.getElementById("f-sillage").value = result.sillage;
+    
+    showToast("Successfully fetched and auto-filled fragrance!");
+    statusSpan.innerText = "Import successful!";
+    statusSpan.style.color = "#2ecc71";
+    
+    document.getElementById("quick-paste-body").classList.add("hidden");
+    document.getElementById("quick-paste-chevron").style.transform = "rotate(0deg)";
+    
+  } catch (error) {
+    console.error("Scraper URL fetch failed:", error);
+    statusSpan.innerText = "Scraping blocked by Cloudflare. Please use the 'Import via Paste' tab.";
+    statusSpan.style.color = "#e74c3c";
+    
+    switchImportTab("text");
+    alert("Fragrantica's Cloudflare security blocked direct scraping. We have switched you to the 'Import via Paste' tab - just copy-paste the page text to auto-fill!");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-down"></i> Import`;
+  }
+}

@@ -184,13 +184,40 @@
                   <i class="fa-solid fa-chevron-down" id="quick-paste-chevron"></i>
                 </div>
                 <div class="quick-paste-body hidden" id="quick-paste-body">
-                  <p class="quick-paste-instructions">
-                    To auto-fill this form: open a fragrance page on Fragrantica, select the entire page text (press <code>Ctrl+A</code> or <code>Cmd+A</code>), copy it, and paste it below.
-                  </p>
-                  <textarea id="fragrantica-raw-paste" class="input-field" placeholder="Paste Fragrantica page text here..." rows="5" style="margin-bottom: 0.75rem; font-family: monospace; font-size: 0.8rem;"></textarea>
-                  <button type="button" class="btn-primary" onclick="processFragranticaPaste()" style="width: 100%; justify-content: center;">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Fill Scent Profile
-                  </button>
+                  <!-- Tab Selector -->
+                  <div class="import-tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                    <button type="button" id="tab-url-btn" class="tab-btn active" onclick="switchImportTab('url')" style="background: none; border: none; color: var(--accent-gold); font-weight: 600; font-size: 0.85rem; cursor: pointer; padding: 0.25rem 0.5rem;">
+                      <i class="fa-solid fa-link"></i> Import via URL
+                    </button>
+                    <button type="button" id="tab-text-btn" class="tab-btn" onclick="switchImportTab('text')" style="background: none; border: none; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer; padding: 0.25rem 0.5rem;">
+                      <i class="fa-solid fa-clipboard"></i> Import via Paste
+                    </button>
+                  </div>
+
+                  <!-- Tab 1: URL Import -->
+                  <div id="import-url-section">
+                    <p class="quick-paste-instructions">
+                      Paste the Fragrantica perfume URL below. We will attempt to automatically fetch and scrape the details.
+                    </p>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                      <input type="url" id="fragrantica-url-input" class="input-field" placeholder="https://www.fragrantica.com/perfume/..." style="font-size: 0.85rem; flex: 1;">
+                      <button type="button" id="btn-import-url" class="btn-primary" onclick="importFromFragranticaURL()" style="white-space: nowrap;">
+                        <i class="fa-solid fa-cloud-arrow-down"></i> Import
+                      </button>
+                    </div>
+                    <span id="import-url-status" style="font-size: 0.75rem; color: var(--text-muted);">Note: Direct fetch may be blocked by Cloudflare; if so, use the "Import via Paste" tab.</span>
+                  </div>
+
+                  <!-- Tab 2: Text Paste Import -->
+                  <div id="import-text-section" class="hidden">
+                    <p class="quick-paste-instructions">
+                      If direct URL import is blocked, open the page on Fragrantica, select all text (<code>Ctrl+A</code> or <code>Cmd+A</code>), copy it, and paste it below.
+                    </p>
+                    <textarea id="fragrantica-raw-paste" class="input-field" placeholder="Paste Fragrantica page text here..." rows="5" style="margin-bottom: 0.75rem; font-family: monospace; font-size: 0.8rem;"></textarea>
+                    <button type="button" class="btn-primary" onclick="processFragranticaPaste()" style="width: 100%; justify-content: center;">
+                      <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Fill Scent Profile
+                    </button>
+                  </div>
                 </div>
               </div>
 
