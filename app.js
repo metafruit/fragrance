@@ -1643,26 +1643,65 @@ function switchImportTab(type) {
 }
 
 async function importFromFragranticaURL() {
-  const url = document.getElementById("fragrantica-url-input").value.trim();
+  const inputVal = document.getElementById("fragrantica-url-input").value.trim();
   const statusSpan = document.getElementById("import-url-status");
   const btn = document.getElementById("btn-import-url");
   
-  if (!url) {
-    alert("Please enter a valid Fragrantica URL first.");
+  if (!inputVal) {
+    alert("Please enter a fragrance name or a Fragrantica URL.");
     return;
   }
   
-  if (!url.startsWith("https://www.fragrantica.com/perfume/")) {
-    alert("Please enter a valid Fragrantica perfume URL, e.g.\nhttps://www.fragrantica.com/perfume/Dior/Sauvage-31861.html");
-    return;
-  }
-  
-  statusSpan.innerText = "Attempting to fetch page via CORS proxy...";
-  statusSpan.style.color = "var(--accent-gold)";
   btn.disabled = true;
-  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Fetching...`;
+  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing...`;
+  
+  let url = inputVal;
+  const isURL = url.startsWith("http://") || url.startsWith("https://");
   
   try {
+    if (!isURL) {
+      statusSpan.innerText = `Searching for "${inputVal}" on Fragrantica...`;
+      statusSpan.style.color = "var(--accent-gold)";
+      
+      // Perform DuckDuckGo Search via Proxy
+      const searchUrl = `https://html.duckduckgo.com/html/?q=site:fragrantica.com/perfume/+${encodeURIComponent(inputVal)}`;
+      const proxySearchUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(searchUrl)}`;
+      
+      const searchResponse = await fetch(proxySearchUrl);
+      if (!searchResponse.ok) throw new Error("Search failed");
+      const searchHtmlText = await searchResponse.text();
+      
+      const parser = new DOMParser();
+      const searchDoc = parser.parseFromString(searchHtmlText, "text/html");
+      
+      const links = Array.from(searchDoc.querySelectorAll('a'))
+        .map(a => a.getAttribute('href') || '')
+        .filter(href => href.includes('fragrantica.com/perfume/'));
+        
+      if (links.length === 0) {
+        throw new Error("No Fragrantica links found in search results.");
+      }
+      
+      let targetUrl = links[0];
+      if (targetUrl.includes('uddg=')) {
+        const match = targetUrl.match(/uddg=([^&]+)/);
+        if (match) {
+          targetUrl = decodeURIComponent(match[1]);
+        }
+      }
+      
+      if (targetUrl.startsWith('//')) {
+        targetUrl = 'https:' + targetUrl;
+      }
+      
+      url = targetUrl;
+      console.log("Found Fragrantica URL:", url);
+    }
+    
+    // Now fetch the Fragrantica page URL
+    statusSpan.innerText = `Fetching profile from Fragrantica...`;
+    statusSpan.style.color = "var(--accent-gold)";
+    
     const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
     const response = await fetch(proxyUrl);
     if (!response.ok) throw new Error("Network response was not ok");
@@ -1747,13 +1786,13 @@ async function importFromFragranticaURL() {
     
   } catch (error) {
     console.error("Scraper URL fetch failed:", error);
-    statusSpan.innerText = "Scraping blocked by Cloudflare. Please use the 'Import via Paste' tab.";
+    statusSpan.innerText = "Blocked or search failed. Please use 'Import via Paste' tab.";
     statusSpan.style.color = "#e74c3c";
     
     switchImportTab("text");
-    alert("Fragrantica's Cloudflare security blocked direct scraping. We have switched you to the 'Import via Paste' tab - just copy-paste the page text to auto-fill!");
+    alert("Fragrantica's Cloudflare or DuckDuckGo search blocked automated access. We have switched you to the 'Import via Paste' tab - just copy-paste the page text to auto-fill!");
   } finally {
     btn.disabled = false;
-    btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-down"></i> Import`;
+    btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Fill`;
   }
 }

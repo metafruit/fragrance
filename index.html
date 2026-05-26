@@ -187,25 +187,25 @@
                   <!-- Tab Selector -->
                   <div class="import-tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
                     <button type="button" id="tab-url-btn" class="tab-btn active" onclick="switchImportTab('url')" style="background: none; border: none; color: var(--accent-gold); font-weight: 600; font-size: 0.85rem; cursor: pointer; padding: 0.25rem 0.5rem;">
-                      <i class="fa-solid fa-link"></i> Import via URL
+                      <i class="fa-solid fa-magnifying-glass"></i> Smart Search / URL
                     </button>
                     <button type="button" id="tab-text-btn" class="tab-btn" onclick="switchImportTab('text')" style="background: none; border: none; color: var(--text-secondary); font-size: 0.85rem; cursor: pointer; padding: 0.25rem 0.5rem;">
                       <i class="fa-solid fa-clipboard"></i> Import via Paste
                     </button>
                   </div>
 
-                  <!-- Tab 1: URL Import -->
+                  <!-- Tab 1: Smart Search & URL -->
                   <div id="import-url-section">
                     <p class="quick-paste-instructions">
-                      Paste the Fragrantica perfume URL below. We will attempt to automatically fetch and scrape the details.
+                      Enter the <strong>fragrance name</strong> (e.g. <code>Dior Sauvage</code>) or paste the <strong>Fragrantica URL</strong> below to search and import automatically.
                     </p>
                     <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
-                      <input type="url" id="fragrantica-url-input" class="input-field" placeholder="https://www.fragrantica.com/perfume/..." style="font-size: 0.85rem; flex: 1;">
+                      <input type="text" id="fragrantica-url-input" class="input-field" placeholder="e.g. Bleu de Chanel OR Fragrantica URL" style="font-size: 0.85rem; flex: 1;">
                       <button type="button" id="btn-import-url" class="btn-primary" onclick="importFromFragranticaURL()" style="white-space: nowrap;">
-                        <i class="fa-solid fa-cloud-arrow-down"></i> Import
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Fill
                       </button>
                     </div>
-                    <span id="import-url-status" style="font-size: 0.75rem; color: var(--text-muted);">Note: Direct fetch may be blocked by Cloudflare; if so, use the "Import via Paste" tab.</span>
+                    <span id="import-url-status" style="font-size: 0.75rem; color: var(--text-muted);">Note: We will query DuckDuckGo to find the page and fetch its profile.</span>
                   </div>
 
                   <!-- Tab 2: Text Paste Import -->
