@@ -1790,7 +1790,21 @@ async function importFromFragranticaURL() {
     statusSpan.style.color = "#e74c3c";
     
     switchImportTab("text");
-    alert("Fragrantica's Cloudflare or DuckDuckGo search blocked automated access. We have switched you to the 'Import via Paste' tab - just copy-paste the page text to auto-fill!");
+    
+    // Dynamically build a Google Search helper button so the user can easily find the page
+    const searchLinkContainer = document.getElementById("search-helper-link-container");
+    if (searchLinkContainer) {
+      const searchTerms = isURL ? inputVal : `site:fragrantica.com/perfume/ ${inputVal}`;
+      searchLinkContainer.innerHTML = `
+        <div style="margin-top: 0.5rem; margin-bottom: 0.85rem; text-align: center;">
+          <a href="https://www.google.com/search?q=${encodeURIComponent(searchTerms)}" target="_blank" class="btn-primary" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; text-decoration: none; padding: 0.75rem 1.25rem; font-size: 0.85rem; width: 100%; border-radius: 12px; font-weight: 600;">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Find "${inputVal}" on Google
+          </a>
+        </div>
+      `;
+    }
+    
+    alert(`Fragrantica's Cloudflare security blocked direct access.\n\nWe have switched you to the 'Import via Paste' tab and generated a quick Google Search button for "${inputVal}"!`);
   } finally {
     btn.disabled = false;
     btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Fill`;
