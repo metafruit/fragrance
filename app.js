@@ -5,8 +5,8 @@ let wizardAccords = [];
 let currentWizardStep = 1;
 
 // Supabase Configuration State
-let supabaseUrl = localStorage.getItem("scentspace_supabase_url") || "";
-let supabaseKey = localStorage.getItem("scentspace_supabase_key") || "";
+let supabaseUrl = localStorage.getItem("scentspace_supabase_url") || "https://gmreoeguftecwsleqhlb.supabase.co";
+let supabaseKey = localStorage.getItem("scentspace_supabase_key") || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtcmVvZWd1ZnRlY3dzbGVxaGxiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4Nzg4NzYsImV4cCI6MjA5NTQ1NDg3Nn0.v8fiR6ICL0lUQn9AVkd1z-xeQi1da9HuBP3Ai6MW27A";
 let supabaseCache = {}; // Cache of fetched perfume records
 
 
