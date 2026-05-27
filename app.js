@@ -4,6 +4,12 @@ let wizardNotes = { top: [], middle: [], base: [] };
 let wizardAccords = [];
 let currentWizardStep = 1;
 
+// Supabase Configuration State
+let supabaseUrl = localStorage.getItem("scentspace_supabase_url") || "";
+let supabaseKey = localStorage.getItem("scentspace_supabase_key") || "";
+let supabaseCache = {}; // Cache of fetched perfume records
+
+
 // Global Chart Instances
 let chartSeasons = null;
 let chartGender = null;
@@ -233,21 +239,86 @@ function deleteFragrance(event, perfumeId) {
 }
 
 // Render Database / Discover Grid
-function searchDatabase() {
+async function searchDatabase() {
   const grid = document.getElementById("database-grid");
   const query = document.getElementById("database-search").value.toLowerCase().trim();
   grid.innerHTML = "";
 
-  // Filter the preloaded list
-  const matches = PRELOADED_FRAGRANCES.filter(perfume => 
-    !query ||
-    perfume.name.toLowerCase().includes(query) ||
-    perfume.brand.toLowerCase().includes(query) ||
-    perfume.accords.some(acc => acc.name.toLowerCase().includes(query)) ||
-    perfume.notes.top.some(n => n.toLowerCase().includes(query)) ||
-    perfume.notes.middle.some(n => n.toLowerCase().includes(query)) ||
-    perfume.notes.base.some(n => n.toLowerCase().includes(query))
-  );
+  let matches = [];
+  let isSupabaseConfigured = supabaseUrl && supabaseKey;
+
+  if (isSupabaseConfigured) {
+    // Show spinner in discover grid while fetching
+    grid.innerHTML = `
+      <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem; gap: 1rem; color: var(--text-secondary);">
+        <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent-color);"></i>
+        <span>Searching database...</span>
+      </div>
+    `;
+
+    try {
+      let endpoint = `${supabaseUrl}/rest/v1/fragrances?select=*`;
+      if (query) {
+        endpoint += `&or=(name.ilike.%25${encodeURIComponent(query)}%25,brand.ilike.%25${encodeURIComponent(query)}%25)`;
+      }
+      endpoint += `&order=name.asc&limit=30`;
+
+      const response = await fetch(endpoint, {
+        method: "GET",
+        headers: {
+          "apikey": supabaseKey,
+          "Authorization": `Bearer ${supabaseKey}`
+        }
+      });
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      matches = await response.json();
+      
+      // Update cache
+      matches.forEach(perfume => {
+        // Parse columns if they come back as string
+        if (typeof perfume.accords === "string") perfume.accords = JSON.parse(perfume.accords);
+        if (typeof perfume.notes === "string") perfume.notes = JSON.parse(perfume.notes);
+        if (typeof perfume.seasons === "string") perfume.seasons = JSON.parse(perfume.seasons);
+        if (typeof perfume.time_of_day === "string") perfume.time_of_day = JSON.parse(perfume.time_of_day);
+        if (typeof perfume.longevity === "string") perfume.longevity = JSON.parse(perfume.longevity);
+        if (typeof perfume.sillage === "string") perfume.sillage = JSON.parse(perfume.sillage);
+
+        // Normalize timeOfDay/time_of_day
+        if (!perfume.timeOfDay) perfume.timeOfDay = perfume.time_of_day;
+
+        supabaseCache[perfume.id] = perfume;
+      });
+      grid.innerHTML = ""; // Clear loader
+    } catch (err) {
+      console.error("Supabase search error, falling back to local list:", err);
+      isSupabaseConfigured = false; 
+    }
+  }
+
+  // Fallback to local list if not configured or query failed
+  if (!isSupabaseConfigured) {
+    matches = PRELOADED_FRAGRANCES.filter(perfume => 
+      !query ||
+      perfume.name.toLowerCase().includes(query) ||
+      perfume.brand.toLowerCase().includes(query) ||
+      perfume.accords.some(acc => acc.name.toLowerCase().includes(query)) ||
+      perfume.notes.top.some(n => n.toLowerCase().includes(query)) ||
+      perfume.notes.middle.some(n => n.toLowerCase().includes(query)) ||
+      perfume.notes.base.some(n => n.toLowerCase().includes(query))
+    );
+  }
+
+  if (matches.length === 0) {
+    grid.innerHTML = `
+      <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem; gap: 1rem; color: var(--text-secondary);">
+        <i class="fa-solid fa-face-frown" style="font-size: 2.5rem; color: var(--accent-gold); opacity: 0.7;"></i>
+        <span style="font-weight: 500;">No fragrances found matching "${query}"</span>
+        <p style="font-size: 0.8rem; max-width: 320px; text-align: center; margin: 0; color: var(--text-muted);">Try searching for a different brand, name, or clear the search query.</p>
+      </div>
+    `;
+    return;
+  }
 
   matches.forEach(perfume => {
     const card = document.createElement("div");
@@ -296,7 +367,10 @@ function searchDatabase() {
 // Add directly from discover
 function addToCollectionDirect(event, dbId) {
   event.stopPropagation(); // Stop drawer from opening
-  const matched = PRELOADED_FRAGRANCES.find(p => p.id === dbId);
+  let matched = PRELOADED_FRAGRANCES.find(p => p.id === dbId);
+  if (!matched) {
+    matched = supabaseCache[dbId];
+  }
   
   if (matched) {
     // Generate new unique ID for user's closet (to support duplicates if they own 2 bottles)
@@ -312,7 +386,11 @@ function addToCollectionDirect(event, dbId) {
 // Detailed Drawer Visualizer
 function openDrawer(perfumeId, isFromDb = false) {
   const sourceList = isFromDb ? PRELOADED_FRAGRANCES : collection;
-  const perfume = sourceList.find(p => p.id === perfumeId);
+  let perfume = sourceList.find(p => p.id === perfumeId);
+
+  if (!perfume && isFromDb) {
+    perfume = supabaseCache[perfumeId];
+  }
 
   if (!perfume) return;
 
@@ -1023,6 +1101,82 @@ function syncToGoogleSheets() {
   });
 }
 
+// Supabase Database Settings Functions
+function toggleDatabaseModal(isOpen) {
+  const modal = document.getElementById("database-modal");
+  const urlInput = document.getElementById("supabase-url");
+  const keyInput = document.getElementById("supabase-key");
+  
+  if (isOpen) {
+    urlInput.value = localStorage.getItem("scentspace_supabase_url") || "";
+    keyInput.value = localStorage.getItem("scentspace_supabase_key") || "";
+    modal.classList.add("open");
+    // Clear status
+    const statusDiv = document.getElementById("supabase-connection-status");
+    statusDiv.style.display = "none";
+  } else {
+    modal.classList.remove("open");
+  }
+}
+
+function closeDatabaseModal(event) {
+  toggleDatabaseModal(false);
+}
+
+function saveSupabaseSettings() {
+  const url = document.getElementById("supabase-url").value.trim();
+  const key = document.getElementById("supabase-key").value.trim();
+  localStorage.setItem("scentspace_supabase_url", url);
+  localStorage.setItem("scentspace_supabase_key", key);
+  supabaseUrl = url;
+  supabaseKey = key;
+}
+
+async function testSupabaseConnection() {
+  const url = document.getElementById("supabase-url").value.trim();
+  const key = document.getElementById("supabase-key").value.trim();
+  const statusDiv = document.getElementById("supabase-connection-status");
+  
+  if (!url || !key) {
+    statusDiv.style.display = "block";
+    statusDiv.style.backgroundColor = "rgba(231, 76, 60, 0.15)";
+    statusDiv.style.color = "#e74c3c";
+    statusDiv.innerText = "Please fill in both fields.";
+    return;
+  }
+  
+  statusDiv.style.display = "block";
+  statusDiv.style.backgroundColor = "rgba(241, 196, 15, 0.15)";
+  statusDiv.style.color = "#f1c40f";
+  statusDiv.innerText = "Testing connection...";
+  
+  try {
+    const response = await fetch(`${url}/rest/v1/fragrances?select=id&limit=1`, {
+      method: "GET",
+      headers: {
+        "apikey": key,
+        "Authorization": `Bearer ${key}`
+      }
+    });
+    
+    if (response.ok) {
+      statusDiv.style.backgroundColor = "rgba(46, 204, 113, 0.15)";
+      statusDiv.style.color = "#2ecc71";
+      statusDiv.innerText = "Success! Connected to database.";
+    } else {
+      const errText = await response.text();
+      statusDiv.style.backgroundColor = "rgba(231, 76, 60, 0.15)";
+      statusDiv.style.color = "#e74c3c";
+      statusDiv.innerText = `Error: ${response.status} - ${response.statusText}`;
+      console.error("Supabase API error details:", errText);
+    }
+  } catch (err) {
+    statusDiv.style.backgroundColor = "rgba(231, 76, 60, 0.15)";
+    statusDiv.style.color = "#e74c3c";
+    statusDiv.innerText = `Connection Failed: ${err.message}`;
+  }
+}
+
 // ==========================================
 // FRAGRANTICA CLIPBOARD IMPORTER & NOTE EMOJIS
 // ==========================================
@@ -1642,6 +1796,62 @@ function switchImportTab(type) {
   }
 }
 
+function fillWizardFromRecord(result) {
+  if (result.name) document.getElementById("f-name").value = result.name;
+  if (result.brand) document.getElementById("f-brand").value = result.brand;
+  if (result.image) document.getElementById("f-image").value = result.image;
+  if (result.concentration) document.getElementById("f-concentration").value = result.concentration;
+
+  const genderRadios = document.getElementsByName("f-gender");
+  genderRadios.forEach(radio => {
+    if (radio.value === result.gender) {
+      radio.checked = true;
+    }
+  });
+
+  // Notes
+  let notes = typeof result.notes === "string" ? JSON.parse(result.notes) : result.notes;
+  wizardNotes = notes || { top: [], middle: [], base: [] };
+  renderNoteTags("top");
+  renderNoteTags("middle");
+  renderNoteTags("base");
+
+  // Accords
+  let accords = typeof result.accords === "string" ? JSON.parse(result.accords) : result.accords;
+  wizardAccords = accords || [];
+  renderCustomAccords();
+
+  // Seasons
+  let seasons = typeof result.seasons === "string" ? JSON.parse(result.seasons) : result.seasons;
+  if (seasons) {
+    document.getElementById("s-spring").value = seasons.spring || 25;
+    document.getElementById("s-summer").value = seasons.summer || 25;
+    document.getElementById("s-autumn").value = seasons.autumn || 25;
+    document.getElementById("s-winter").value = seasons.winter || 25;
+    updateSliderVal("spring");
+    updateSliderVal("summer");
+    updateSliderVal("autumn");
+    updateSliderVal("winter");
+  }
+
+  // Time of Day
+  let timeOfDay = typeof result.time_of_day === "string" ? JSON.parse(result.time_of_day) : (result.timeOfDay || result.time_of_day);
+  if (timeOfDay) {
+    document.getElementById("s-day").value = timeOfDay.day || 50;
+    updateTimeOfDaySlider(timeOfDay.day || 50);
+  }
+
+  // Longevity & Sillage
+  let longevity = typeof result.longevity === "string" ? JSON.parse(result.longevity) : result.longevity;
+  let sillage = typeof result.sillage === "string" ? JSON.parse(result.sillage) : result.sillage;
+  
+  const longevityLabel = (longevity && longevity.label) ? longevity.label : (longevity || "Moderate");
+  const sillageLabel = (sillage && sillage.label) ? sillage.label : (sillage || "Moderate");
+
+  document.getElementById("f-longevity").value = longevityLabel;
+  document.getElementById("f-sillage").value = sillageLabel;
+}
+
 async function importFromFragranticaURL() {
   const inputVal = document.getElementById("fragrantica-url-input").value.trim();
   const statusSpan = document.getElementById("import-url-status");
@@ -1660,6 +1870,46 @@ async function importFromFragranticaURL() {
   
   try {
     if (!isURL) {
+      // Try Supabase lookup first if configured
+      if (supabaseUrl && supabaseKey) {
+        statusSpan.innerText = `Searching ScentSpace database for "${inputVal}"...`;
+        statusSpan.style.color = "var(--accent-color)";
+        
+        try {
+          const endpoint = `${supabaseUrl}/rest/v1/fragrances?select=*&or=(name.ilike.%25${encodeURIComponent(inputVal)}%25,brand.ilike.%25${encodeURIComponent(inputVal)}%25)&limit=1`;
+          const response = await fetch(endpoint, {
+            method: "GET",
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data && data.length > 0) {
+              const matched = data[0];
+              fillWizardFromRecord(matched);
+              
+              btn.disabled = false;
+              btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Fill`;
+              statusSpan.innerText = `Successfully loaded "${matched.name}" from database!`;
+              statusSpan.style.color = "#2ecc71";
+              showToast("Scent profile loaded from database!");
+              
+              // auto close paste section if open
+              const pasteBody = document.getElementById("quick-paste-body");
+              if (pasteBody && !pasteBody.classList.contains("hidden")) {
+                toggleQuickPaste();
+              }
+              return;
+            }
+          }
+        } catch (dbErr) {
+          console.error("Supabase Wizard lookup failed, falling back to Fragrantica search:", dbErr);
+        }
+      }
+      
       statusSpan.innerText = `Searching for "${inputVal}" on Fragrantica...`;
       statusSpan.style.color = "var(--accent-gold)";
       

@@ -68,6 +68,10 @@
           <i class="fa-solid fa-table"></i>
           <span>Google Sheet Sync</span>
         </button>
+        <button class="btn-import-export" onclick="toggleDatabaseModal(true)" style="border-color: rgba(52, 152, 219, 0.3);">
+          <i class="fa-solid fa-database"></i>
+          <span>Database Settings</span>
+        </button>
         <input type="file" id="import-file-input" style="display: none;" accept=".json" onchange="importCollection(event)">
       </div>
     </aside>
@@ -667,6 +671,53 @@
             <li>Click the gear icon, select <strong>Web app</strong>. Set execution as <strong>Me</strong> and Access as <strong>Anyone</strong>.</li>
             <li>Click <strong>Deploy</strong>, authorize permissions, and copy the generated <strong>Web App URL</strong>.</li>
             <li>Paste the URL in the box above and click Sync!</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUPABASE DATABASE SETTINGS MODAL -->
+  <div id="database-modal" class="drawer-overlay" onclick="closeDatabaseModal(event)">
+    <div class="drawer-container" style="max-width: 500px; height: auto; max-height: 95vh; border-radius: 20px 20px 0 0; margin-top: auto; border-bottom: none; border-left: none; border-right: none; border-top: 1px solid var(--border-color);" onclick="event.stopPropagation()">
+      <div class="drawer-header">
+        <div class="drawer-title-group">
+          <span class="brand-tag">INTEGRATIONS</span>
+          <h3>Supabase Database Settings</h3>
+        </div>
+        <button class="btn-close-drawer" onclick="toggleDatabaseModal(false)">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="drawer-body" style="gap: 1.5rem; padding: 2rem;">
+        <p style="font-size: 0.9rem; color: var(--text-secondary);">
+          Link ScentSpace to your free hosted Supabase PostgreSQL instance to search over 37,000+ fragrances instantly.
+        </p>
+        
+        <div class="form-group">
+          <label for="supabase-url">Supabase Project URL</label>
+          <input type="url" id="supabase-url" class="input-field" placeholder="https://your-project-ref.supabase.co" oninput="saveSupabaseSettings()">
+        </div>
+
+        <div class="form-group">
+          <label for="supabase-key">Supabase Anon API Key</label>
+          <input type="password" id="supabase-key" class="input-field" placeholder="your-public-anon-key" oninput="saveSupabaseSettings()">
+        </div>
+
+        <div id="supabase-connection-status" style="font-size: 0.85rem; padding: 0.5rem 1rem; border-radius: 8px; display: none;"></div>
+
+        <button class="btn-primary" id="btn-test-supabase" style="width: 100%; justify-content: center; background-color: var(--accent-color); color: white;" onclick="testSupabaseConnection()">
+          <i class="fa-solid fa-plug"></i> Test Connection
+        </button>
+
+        <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem; margin-top: 0.5rem;">
+          <h4 style="font-size: 0.85rem; text-transform: uppercase; color: var(--accent-gold); margin-bottom: 0.5rem; letter-spacing: 1px;">Setup Instructions:</h4>
+          <ol style="font-size: 0.8rem; color: var(--text-secondary); padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.4rem;">
+            <li>Create a free account at <a href="https://supabase.com" target="_blank" style="color: var(--accent-gold); text-decoration: underline;">supabase.com</a> and click <strong>New Project</strong>.</li>
+            <li>In your Supabase Dashboard, go to <strong>Project Settings &rarr; API</strong> to find your Project URL and Anon public key.</li>
+            <li>In the <strong>Table Editor</strong>, create a table named <code>fragrances</code>.</li>
+            <li>Import the compiled <code>supabase_fragrances.csv</code> file into the table using the CSV import interface.</li>
+            <li>Make sure to enable public read access (or disable RLS/create a select policy for anonymous users) on the <code>fragrances</code> table.</li>
           </ol>
         </div>
       </div>
