@@ -1,5 +1,5 @@
 /**
- * Google Apps Script for ScentSpace Collection Sync
+ * Google Apps Script for Dominique's Closet Sync
  * 
  * Instructions:
  * 1. Create a Google Sheet.
@@ -12,7 +12,7 @@
  *    - Execute as: Me (your-email@gmail.com)
  *    - Who has access: Anyone
  * 8. Click Deploy, authorize permissions, and copy the Web App URL.
- * 9. Paste the URL into ScentSpace sheets sync modal!
+ * 9. Paste the URL into Dominique's Closet sheets sync modal!
  */
 
 function doPost(e) {
@@ -32,9 +32,9 @@ function doPost(e) {
     var collection = JSON.parse(contents);
     
     var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName("ScentSpace Collection");
+    var sheet = ss.getSheetByName("Dominique's Closet");
     if (!sheet) {
-      sheet = ss.insertSheet("ScentSpace Collection");
+      sheet = ss.insertSheet("Dominique's Closet");
     }
     
     // Clear sheet
@@ -49,7 +49,7 @@ function doPost(e) {
     ];
     sheet.appendRow(columnHeaders);
     
-    // Format Header Row (Styled in ScentSpace gold accent)
+    // Format Header Row (Styled in gold accent)
     var headerRange = sheet.getRange(1, 1, 1, columnHeaders.length);
     headerRange.setFontWeight("bold");
     headerRange.setBackground("#d4af37"); // Gold Accent

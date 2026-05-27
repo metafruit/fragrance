@@ -949,7 +949,7 @@ function exportCollection() {
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(collection, null, 2));
   const downloadAnchor = document.createElement("a");
   downloadAnchor.setAttribute("href", dataStr);
-  downloadAnchor.setAttribute("download", `scentspace_closet_backup.json`);
+  downloadAnchor.setAttribute("download", `dominiques_closet_backup.json`);
   document.body.appendChild(downloadAnchor);
   downloadAnchor.click();
   downloadAnchor.remove();
@@ -1872,7 +1872,7 @@ async function importFromFragranticaURL() {
     if (!isURL) {
       // Try Supabase lookup first if configured
       if (supabaseUrl && supabaseKey) {
-        statusSpan.innerText = `Searching ScentSpace database for "${inputVal}"...`;
+        statusSpan.innerText = `Searching Dominique's Closet database for "${inputVal}"...`;
         statusSpan.style.color = "var(--accent-color)";
         
         try {

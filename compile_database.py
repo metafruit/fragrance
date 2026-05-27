@@ -115,7 +115,7 @@ def parse_excel_and_compile():
     skipped_fragrances = 0
     
     with open(OUTPUT_FILE, "w", encoding="utf-8", newline="") as f_out:
-        writer = csv.writer(f_out, delimiter="|", quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        writer = csv.writer(f_out, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL)
         writer.writerow([
             "id", "name", "brand", "concentration", "gender", "image",
             "accords", "notes", "seasons", "time_of_day", "longevity", "sillage"
